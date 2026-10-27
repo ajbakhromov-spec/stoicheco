@@ -1,0 +1,1756 @@
+<title>EcoChem Stoichiometry Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a lab notebook. Left: the level ladder (or teacher controls / lab bench). Right: one worked solution that grows step by step.
+   Chemistry working is written in cobalt ink; the eco layer is leaf green; final answers sit on a burette-amber card. */
+:root{
+  --paper:#F2F5F3; --surface:#FFFFFF; --sunk:#E8EEEA; --ink:#14221B; --muted:#56665E; --line:#D2DCD6;
+  --chem:#2B45A3; --chem-soft:#E3E8F8; --on-chem:#FFFFFF;
+  --eco:#2C7A4B; --eco-soft:#DEF0E4; --on-eco:#FFFFFF;
+  --amber:#9A5B0C; --amber-soft:#F7EAD3;
+  --bad:#B42318; --bad-soft:#FBE3DF; --good:#1D7443;
+  --in0:#3F5BC4; --in1:#7088DA; --in2:#A3B3EA; --by:#B7C2BC; --emit:#C98A2E; --want:#2C7A4B;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0E1512; --surface:#151F1A; --sunk:#1C2822; --ink:#E2EBE5; --muted:#93A49A; --line:#2B3A33;
+  --chem:#93A8F2; --chem-soft:#1F2A4A; --on-chem:#0E1512;
+  --eco:#6FC793; --eco-soft:#173324; --on-eco:#0E1512;
+  --amber:#E8B65A; --amber-soft:#33281A;
+  --bad:#F08A7E; --bad-soft:#3A1D1A; --good:#6FC793;
+  --in0:#6F87E0; --in1:#5268B8; --in2:#3C4C88; --by:#4E5C55; --emit:#C98A2E; --want:#4FAF76;
+  color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --paper:#0E1512; --surface:#151F1A; --sunk:#1C2822; --ink:#E2EBE5; --muted:#93A49A; --line:#2B3A33;
+  --chem:#93A8F2; --chem-soft:#1F2A4A; --on-chem:#0E1512;
+  --eco:#6FC793; --eco-soft:#173324; --on-eco:#0E1512;
+  --amber:#E8B65A; --amber-soft:#33281A;
+  --bad:#F08A7E; --bad-soft:#3A1D1A; --good:#6FC793;
+  --in0:#6F87E0; --in1:#5268B8; --in2:#3C4C88; --by:#4E5C55; --emit:#C98A2E; --want:#4FAF76;
+  color-scheme:dark; }
+
+*{box-sizing:border-box}
+html,body{background:var(--paper)}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+sub,sup{font-size:.72em;line-height:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--chem);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1260px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 28px;padding-block:20px 0}
+.brand{min-width:0}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.55rem,3.2vw,2.2rem);letter-spacing:-.02em;line-height:1.05;margin:0;text-wrap:balance}
+.brand h1 b{color:var(--eco);font-weight:800}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:8px 0 16px;font-size:.9rem;color:var(--muted)}
+.flow span{padding:2px 10px;border-radius:999px;background:var(--chem-soft);color:var(--chem);font-weight:700}
+.flow span.e{background:var(--eco-soft);color:var(--eco)}
+.flow i{font-style:normal;color:var(--muted)}
+.tabs{display:flex;gap:2px;overflow-x:auto;max-width:100%}
+.tab{border:0;background:none;padding:10px 14px 12px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tab small{display:block;font-weight:400;font-size:.74rem;letter-spacing:.04em;text-transform:uppercase}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--chem)}
+.tab:hover{color:var(--ink)}
+main{padding-block:26px 72px}
+
+/* shared layout */
+.split{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}}
+.side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:16px;padding-right:4px}
+@media (max-width:900px){.side{position:static;max-height:none}.ladder-panel{max-height:300px;overflow:auto}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.eyebrow{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 6px}
+h2.ptitle{font-family:var(--f-display);font-weight:700;font-size:clamp(1.3rem,2.4vw,1.7rem);letter-spacing:-.01em;margin:0;line-height:1.15;text-wrap:balance}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;margin-bottom:16px}
+.head > div{min-width:0}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);vertical-align:middle}
+.pill.ext{background:var(--amber-soft);color:var(--amber)}
+
+/* ladder */
+.method{font-size:.88rem;color:var(--muted);margin:0}
+.method b{color:var(--ink)}
+.level{display:flex;flex-direction:column;gap:2px}
+.level h3{font-family:var(--f-display);font-size:1rem;font-weight:700;margin:0;display:flex;gap:8px;align-items:baseline}
+.level h3 .ln{font-family:var(--f-mono);font-size:.78rem;color:var(--chem);font-weight:600}
+.level p{margin:0 0 6px;font-size:.82rem;color:var(--muted)}
+.prob{display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:8px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:7px 8px;border-radius:8px;cursor:pointer}
+.prob:hover{background:var(--sunk)}
+.prob[aria-current="true"]{background:var(--chem-soft)}
+.prob .pid{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.prob .pt{font-size:.93rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stars{font-size:.8rem;letter-spacing:1px;color:var(--amber);white-space:nowrap}
+.stars .off{color:var(--line)}
+.levels{display:flex;flex-direction:column;gap:14px}
+
+/* segmented control */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);flex-wrap:wrap}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:999px;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg-help{font-size:.82rem;color:var(--muted);margin:6px 2px 0}
+
+/* player */
+.rail{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;padding:0;list-style:none}
+.rail li{font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--surface);display:flex;align-items:center;gap:5px}
+.rail li.done{background:var(--chem-soft);border-color:transparent;color:var(--chem)}
+.rail li.now{background:var(--chem);border-color:var(--chem);color:var(--on-chem)}
+.rail li.skip{text-decoration:line-through;opacity:.55}
+.rail li.eco.done{background:var(--eco-soft);color:var(--eco)}
+.rail li.eco.now{background:var(--eco);border-color:var(--eco);color:var(--on-eco)}
+.rail .leaf{width:14px;height:14px}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px 16px 14px;display:grid;grid-template-columns:36px minmax(0,1fr);column-gap:12px}
+.step > .num{grid-row:1 / span 2;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 .82rem var(--f-mono);background:var(--chem-soft);color:var(--chem)}
+.step > h3{margin:3px 0 8px;font:700 1.05rem var(--f-display);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.step > h3 small{font:400 .82rem var(--f-body);color:var(--muted)}
+.step > .body{min-width:0;grid-column:2}
+.step.skipped{background:transparent;border-style:dashed;padding-block:10px}
+.step.skipped > .num{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.step.skipped > h3{color:var(--muted);margin-bottom:2px}
+.step.skipped .body{color:var(--muted);font-size:.92rem}
+.step.skipped .body p{margin:0}
+.step.current{border-color:var(--chem);box-shadow:0 0 0 3px var(--chem-soft)}
+.step.eco{border-color:var(--eco)}
+.step.eco > .num{background:var(--eco-soft);color:var(--eco)}
+.step.eco.current{box-shadow:0 0 0 3px var(--eco-soft)}
+.qtext{font-size:1.08rem;margin:0;max-width:68ch}
+.eq{font-size:1.25rem;padding:12px 14px;background:var(--sunk);border-radius:8px;overflow-x:auto;white-space:nowrap;line-height:2}
+.eq .co{font-weight:700;color:var(--chem);margin-right:1px}
+.eq .st{font-size:.68em;color:var(--muted);margin-left:1px}
+.eq .arrow{color:var(--chem);font-weight:700;margin:0 .35em}
+.eq .op{color:var(--muted);margin:0 .2em}
+.note{font-size:.88rem;color:var(--muted);margin:8px 0 0}
+.note.bad{color:var(--bad)}
+.calc{display:flex;flex-direction:column;gap:4px;font-variant-numeric:tabular-nums}
+.calc p{margin:0;padding:3px 0 3px 12px;border-left:2px solid var(--chem-soft);overflow-wrap:anywhere}
+.calc p b{color:var(--chem)}
+.calc .sub{font-weight:700;color:var(--muted);font-size:.85rem;letter-spacing:.03em}
+.calc.muted p{color:var(--muted);border-left-color:var(--line)}
+.calc.muted{margin-top:6px}
+.ask{margin:0 0 10px;font-weight:700}
+.checks{display:flex;flex-direction:column;gap:10px}
+.check{border:1px dashed var(--chem);background:var(--chem-soft);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.check.ok{border-style:solid;border-color:var(--good);background:transparent}
+.check.shown{border-style:solid;border-color:var(--line);background:transparent}
+.guide{margin:0;font-size:.9rem;color:var(--chem)}
+.guide::before{content:"Set up: ";font-weight:700}
+.crow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.crow label{font-weight:700}
+.crow input{width:10rem;max-width:100%;font:600 1rem var(--f-mono);padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.crow .unit{color:var(--muted);font-weight:700}
+.choice{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer}
+.choice:hover{border-color:var(--chem)}
+.fb{margin:0;font-size:.92rem}
+.fb.ok{color:var(--good);font-weight:700}
+.fb.bad{color:var(--bad)}
+.fb.tip{color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--chem);border-color:var(--chem);color:var(--on-chem)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.eco{background:var(--eco);border-color:var(--eco);color:var(--on-eco)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;align-items:center}
+.controls .spacer{flex:1}
+.answer-box{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:14px 16px;border-radius:10px;background:var(--amber-soft)}
+.answer-box span{font-weight:700}
+.answer-box strong{font:800 1.5rem var(--f-display);color:var(--amber);font-variant-numeric:tabular-nums}
+.answer-box em{font-style:normal;font-size:.8rem;color:var(--muted)}
+.done-banner{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);margin-top:12px}
+.done-banner p{margin:0}
+.done-banner .stars{font-size:1.15rem}
+.error-card{padding:16px;border-radius:12px;border:1px solid var(--bad);background:var(--bad-soft)}
+.error-card p{margin:4px 0 0}
+.ask-q{font:600 1.05rem var(--f-mono);margin:0}
+.ask-q .blank{display:inline-block;min-width:4.5em;border-bottom:2px solid var(--chem);text-align:center;color:var(--chem)}
+
+/* eco */
+.eco-kicker{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--eco)}
+.leaf{width:18px;height:18px;flex:none}
+.eco-result{margin:0 0 12px}
+.eco-result b{color:var(--amber)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.metric{padding:10px 12px;border-radius:10px;background:var(--eco-soft);min-width:0}
+.metric span{display:block;font-size:.8rem;color:var(--muted);font-weight:700}
+.metric b{display:block;font:700 1.2rem var(--f-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.metric small{display:block;font-size:.78rem;color:var(--muted)}
+.eco-text{max-width:70ch;margin:12px 0}
+.think{border-left:4px solid var(--eco);padding:8px 14px;background:var(--eco-soft);border-radius:0 8px 8px 0;margin-top:12px}
+.think span{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--eco)}
+.think p{margin:2px 0 0}
+.cap{font-size:.8rem;color:var(--muted);font-weight:700;margin:0 0 6px}
+.mb{margin:6px 0 12px;display:flex;flex-direction:column;gap:6px}
+.mrow{display:grid;grid-template-columns:2.6em minmax(0,1fr);gap:8px;align-items:center}
+.mlab{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.mbar{display:flex;height:30px;border-radius:6px;overflow:hidden;gap:2px;background:var(--sunk)}
+.mbar i{display:flex;align-items:center;justify-content:center;min-width:3px;font-style:normal;font-size:.78rem;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap}
+.mbar i span{padding:0 6px;text-overflow:ellipsis;overflow:hidden}
+.in0{background:var(--in0)} .in1{background:var(--in1)} .in2{background:var(--in2)}
+.want{background:var(--want)} .emit{background:var(--emit)} .by{background:var(--by)}
+.mbar i.by,.mbar i.in2{color:var(--ink)}
+.xs{background:repeating-linear-gradient(135deg,var(--by) 0 5px,var(--sunk) 5px 10px)}
+.mbar i.xs{color:var(--ink)}
+.mleg{list-style:none;margin:0 0 4px 3.25em;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.84rem}
+.mleg li{display:flex;align-items:center;gap:6px}
+.mleg li i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.mleg.key{color:var(--muted);font-size:.78rem}
+.tbl-wrap{overflow-x:auto;margin:8px 0}
+.tbl{border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums;min-width:100%}
+.tbl th,.tbl td{text-align:left;padding:6px 12px 6px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl th{font-size:.78rem;color:var(--muted)}
+.sources{display:flex;flex-direction:column;gap:5px;margin:4px 0 8px}
+.sbar{display:grid;grid-template-columns:7.5em minmax(0,1fr) 6em;gap:8px;align-items:center;font-size:.86rem}
+.sbar i{display:block;height:12px;width:var(--w);background:var(--eco);border-radius:3px}
+.sbar b{text-align:right;font-variant-numeric:tabular-nums}
+.slider{display:flex;flex-direction:column;gap:4px;font-size:.88rem;font-weight:700;margin:4px 0 10px;max-width:420px}
+.slider input{width:100%;accent-color:var(--eco)}
+.yield{margin:8px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px}
+.yield p{margin:6px 0 0;max-width:70ch}
+.ybar{height:12px;border-radius:6px;background:repeating-linear-gradient(135deg,var(--by) 0 5px,var(--sunk) 5px 10px);overflow:hidden}
+.ybar i{display:block;height:100%;background:var(--want)}
+
+/* teacher board */
+.projector .step{font-size:1.18rem}
+.projector .qtext{font-size:1.35rem}
+.projector .eq{font-size:1.6rem}
+.projector .ask-q{font-size:1.3rem}
+.whatif{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label,.field > span{font-size:.8rem;font-weight:700;color:var(--muted)}
+.field input,.field select,.field textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);min-width:0}
+.field textarea{font-family:var(--f-mono);font-size:.95rem;resize:vertical}
+.plist{display:flex;flex-direction:column;gap:2px;max-height:420px;overflow:auto}
+@media (max-width:900px){.plist{max-height:260px}}
+.kbd{font:600 .75rem var(--f-mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px}
+.hint-line{font-size:.82rem;color:var(--muted);margin:0}
+
+/* lab */
+.labform{display:flex;flex-direction:column;gap:14px}
+.fgroup{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.fgroup:first-child{border-top:0;padding-top:0}
+.fgroup > .eyebrow{margin:0}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.err{color:var(--bad);margin:0;font-size:.92rem}
+.err:empty{display:none}
+.hidden{display:none}
+footer{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);font-size:.84rem}
+footer p{margin:0;max-width:90ch}
+
+@media (max-width:520px){
+  .step{grid-template-columns:minmax(0,1fr);padding:14px}
+  .step > .num{grid-row:auto;margin-bottom:4px}
+  .step > .body, .step > h3{grid-column:1}
+  .eq{font-size:1.05rem}
+  .mleg{margin-left:0}
+  .sbar{grid-template-columns:6.5em minmax(0,1fr) 5em}
+}
+
+.tagline{margin:6px 0 16px;color:var(--muted);font-size:.95rem}
+.tagline b{color:var(--eco)}
+details.level{border-top:1px solid var(--line);padding-top:8px}
+details.level:first-child{border-top:0;padding-top:0}
+details.level summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:2.4em minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:4px 8px;font:700 1rem var(--f-display)}
+details.level summary::-webkit-details-marker{display:none}
+details.level summary .ln{font:600 .8rem var(--f-mono);color:var(--chem)}
+details.level summary .lcount{font:400 .8rem var(--f-mono);color:var(--muted)}
+details.level[open] summary{margin-bottom:4px}
+.levels{gap:8px}
+.verdict{margin:10px 0 0;padding:8px 12px;border-radius:8px;font-weight:700}
+.verdict.ok{background:var(--eco-soft);color:var(--good)}
+.verdict.shown{background:var(--sunk);color:var(--muted);font-weight:400}
+details.mb summary,details.more summary{cursor:pointer;font-size:.86rem;font-weight:700;color:var(--muted)}
+details.mb[open] summary{margin-bottom:6px}
+.fuels{display:flex;flex-direction:column;gap:6px;margin:6px 0 12px;padding:14px;border:1px solid var(--line);border-radius:10px}
+.frow2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 5.5em;gap:12px;align-items:center;font-size:.88rem;padding:8px 6px;border-radius:6px;border-top:1px solid var(--line)}
+.fname{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fname > span:first-child{font-weight:700}
+.feq{font-size:.92rem;line-height:1.7;overflow-x:auto}
+.feq .st{display:none}.feq .co{font-weight:700;color:var(--chem)}.feq .arrow{color:var(--chem);margin:0 .25em}
+.feq em{font-style:normal;color:var(--muted);font-size:.8rem}
+.fdh{font-size:.78rem;color:var(--muted)}
+.rxname{margin:0 0 6px;font-weight:700;color:var(--muted);font-size:.9rem}
+.frow2 i{display:block;height:12px;width:var(--w);background:var(--in1);border-radius:3px;transition:width .2s}
+.frow2 i.inf{background:repeating-linear-gradient(90deg,var(--want) 0 6px,transparent 6px 10px)}
+.frow2 b{text-align:right;font-variant-numeric:tabular-nums}
+.frow2.me{background:var(--amber-soft)}
+.frow2.me i{background:var(--amber)}
+.fuels .note{margin:4px 0 0}
+@media (max-width:620px){.frow2{grid-template-columns:minmax(0,1fr) 5em}.frow2 .fname{grid-column:1 / -1}.frow2 i{grid-row:2}}
+@media (prefers-reduced-motion:no-preference){
+  .step.enter{animation:rise .28s ease-out both}
+  @keyframes rise{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>EcoChem <b>Stoichiometry</b> Lab</h1>
+      <p class="tagline">Solve the chemistry → understand the numbers → <b>explore the environmental meaning</b></p>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-path" data-view="path" aria-selected="true">Learning Path<small>Students</small></button>
+      <button class="tab" role="tab" id="tab-lab" data-view="lab" aria-selected="false">Reaction Lab<small>Everyone</small></button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- LEARNING PATH -->
+  <section id="view-path" role="tabpanel" aria-labelledby="tab-path">
+    <div class="split">
+      <aside class="side">
+        <div class="panel ladder-panel"><div class="levels" id="ladder"></div></div>
+      </aside>
+      <div>
+        <div class="head">
+          <div>
+            <p class="eyebrow" id="pathMeta"></p>
+            <h2 class="ptitle" id="pathTitle"></h2>
+          </div>
+          <div>
+            <div class="seg" id="supportSeg" role="group" aria-label="Support level">
+              <button data-s="guided" aria-pressed="true">Guided</button>
+              <button data-s="supported" aria-pressed="false">Supported</button>
+              <button data-s="independent" aria-pressed="false">Independent</button>
+            </div>
+            <p class="seg-help" id="supportHelp"></p>
+          </div>
+        </div>
+        <div id="pathPlayer"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REACTION LAB -->
+  <section id="view-lab" role="tabpanel" aria-labelledby="tab-lab" hidden>
+    <div class="split">
+      <aside class="side">
+        <form class="panel labform" id="labForm" novalidate></form>
+      </aside>
+      <div>
+        <div class="head">
+          <div>
+            <p class="eyebrow" id="labMeta">Reaction Lab</p>
+            <h2 class="ptitle" id="labTitle">Build any calculation</h2>
+          </div>
+          <div class="seg" id="labModeSeg" role="group" aria-label="Lab mode">
+            <button data-m="reveal" aria-pressed="true">Worked solution</button>
+            <button data-m="practice" aria-pressed="false">Practise it</button>
+          </div>
+        </div>
+        <div id="labPlayer"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap"><p>IGCSE data: A<sub>r</sub> values, 24 dm³/mol at r.t.p., F = 96 500 C/mol. Progress is saved in this browser.</p></div></footer>
+<script>
+/* ================================================================
+   EcoChem engine — pure functions, no DOM.
+   Reaction data model → stoichiometry solver → eco interpretation.
+   ================================================================ */
+
+const AR = {H:1,He:4,Li:7,Be:9,B:11,C:12,N:14,O:16,F:19,Ne:20,Na:23,Mg:24,Al:27,Si:28,P:31,S:32,Cl:35.5,Ar:40,K:39,Ca:40,Ti:48,Cr:52,Mn:55,Fe:56,Co:59,Ni:59,Cu:64,Zn:65,Br:80,Ag:108,Sn:119,I:127,Ba:137,Au:197,Hg:201,Pb:207};
+const FARADAY = 96500, RGAS = 8.31, NA = 6.02e23;
+const UNIT = { mass:{mg:1e-3,g:1,kg:1e3,t:1e6}, vol:{cm3:1e-3,dm3:1,m3:1e3}, time:{s:1,min:60,h:3600} };
+const ULBL = {mg:'mg',g:'g',kg:'kg',t:'t',cm3:'cm³',dm3:'dm³',m3:'m³',s:'s',min:'min',h:'h',mol:'mol'};
+const PATTERN = [
+  ['question','Question'],['equation','Balanced equation'],['data','Relevant data'],['moles','Moles'],
+  ['ratio','Mole ratio'],['required','Required quantity'],['answer','Answer'],['eco','Eco connection']
+];
+
+/* ---------- number formatting ---------- */
+const SUPS = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻','+':'⁺'};
+function group(s){ const [i,d] = s.split('.'); const neg = i.startsWith('-'); let ii = neg? i.slice(1):i; if(ii.length>=5) ii = ii.replace(/\B(?=(\d{3})+(?!\d))/g,' '); return (neg?'-':'')+ii+(d!==undefined?'.'+d:''); }
+function fmt(x, sf=3){
+  if(x===null||x===undefined||!isFinite(x)) return '—';
+  if(x===0) return '0';
+  const a = Math.abs(x);
+  if(a>=1e6 || a<1e-3){
+    const [m,e] = x.toExponential(sf-1).split('e');
+    return m+' × 10'+String(+e).split('').map(c=>SUPS[c]).join('');
+  }
+  let s = x.toPrecision(sf);
+  if(s.includes('e')) s = String(Number(s));
+  return group(s);
+}
+function fmtMr(M){ return Number.isInteger(M) ? String(M) : M.toFixed(1); }
+function fm(g){ const a=Math.abs(g); if(a>=1e6) return fmt(g/1e6)+' t'; if(a>=1000) return fmt(g/1000)+' kg'; if(a>0 && a<1) return fmt(g*1000)+' mg'; return fmt(g)+' g'; }
+function parseNum(raw){
+  if(raw===null||raw===undefined) return NaN;
+  let s = String(raw).trim();
+  const back = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-','⁺':''};
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]/g, c=>back[c]).replace(/−/g,'-').replace(/\s/g,'').replace(/,/g,'.');
+  s = s.replace(/[×xX*]10\^?(-?\d+)/,'e$1');
+  if(!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)) return NaN;
+  return Number(s);
+}
+function close(a,b,tol=0.02){ return Math.abs(a-b) <= tol*Math.abs(b) + 1e-15; }
+
+/* ---------- formulae ---------- */
+function parseGroup(s){
+  let i = 0;
+  const num = ()=>{ let m=''; while(i<s.length && /\d/.test(s[i])){ m+=s[i]; i++; } return m? +m : 1; };
+  const grp = ()=>{
+    const res = [];
+    while(i<s.length){
+      const ch = s[i];
+      if(ch==='('){ i++; const inner = grp(); if(s[i]!==')') throw new Error('A bracket is not closed in "'+s+'".'); i++; const n = num(); inner.forEach(([e,k])=>res.push([e,k*n])); }
+      else if(ch===')') return res;
+      else if(/[A-Z]/.test(ch)){ let el=ch; i++; if(i<s.length && /[a-z]/.test(s[i])){ el+=s[i]; i++; } if(!(el in AR)) throw new Error('"'+el+'" is not an element in the data table.'); res.push([el,num()]); }
+      else throw new Error('Unexpected "'+ch+'" in "'+s+'". Write formulae like H2SO4 or Ca(OH)2.');
+    }
+    return res;
+  };
+  const r = grp(); if(i<s.length) throw new Error('Unexpected ")" in "'+s+'".'); return r;
+}
+function parseFormula(str){
+  const parts = String(str).split(/[.·•]/);
+  const counts = {}, order = [];
+  parts.forEach((part,pi)=>{
+    let mult = 1, s = part;
+    if(pi>0){ const m = s.match(/^(\d+)/); if(m){ mult=+m[1]; s=s.slice(m[1].length); } }
+    if(!s) throw new Error('Empty formula.');
+    parseGroup(s).forEach(([el,n])=>{ if(!(el in counts)){ counts[el]=0; order.push(el); } counts[el]+=n*mult; });
+  });
+  return {counts, order};
+}
+function mrOf(pf){ let M=0; for(const el in pf.counts) M += AR[el]*pf.counts[el]; return Math.round(M*10)/10; }
+function fStr(f){ return String(f).replace(/\./g,'·').replace(/([A-Za-z\)])(\d+)/g,'$1<sub>$2</sub>'); }
+function fH(sp){
+  if(typeof sp==='string'){ if(sp==='e-') return 'e<sup>−</sup>'; const m = sp.match(/^(.*)\^(.*)$/); return m? fStr(m[1])+'<sup>'+m[2].replace('-','−')+'</sup>' : fStr(sp); }
+  if(sp.e) return 'e<sup>−</sup>';
+  return fStr(sp.f) + (sp.ch? '<sup>'+sp.ch.replace('-','−')+'</sup>' : '');
+}
+function mrLabel(sp){ const single = sp.order && sp.order.length===1 && sp.counts[sp.order[0]]===1; return (single?'A<sub>r</sub>':'M<sub>r</sub>')+'('+fH(sp)+')'; }
+function mrBreak(sp){
+  const single = sp.order.length===1 && sp.counts[sp.order[0]]===1;
+  if(single) return fmtMr(sp.M);
+  const parts = sp.order.map(el=>{ const n=sp.counts[el]; return n>1? `(${n} × ${AR[el]})` : `${AR[el]}`; });
+  return parts.join(' + ') + ' = ' + fmtMr(sp.M);
+}
+function pctEl(sp, el){ return (sp.counts[el]||0)*AR[el]/sp.M*100; }
+function sameCounts(a,b){ const ka=Object.keys(a), kb=Object.keys(b); return ka.length===kb.length && ka.every(k=>a[k]===b[k]); }
+function chargeNum(ch){ if(!ch) return 0; const m = ch.match(/^(\d*)([+-])$/); if(!m) return 0; return (m[1]?+m[1]:1)*(m[2]==='+'?1:-1); }
+
+/* ---------- reactions ---------- */
+function parseSpecies(tok, side){
+  let t = tok.trim(), state = '';
+  const sm = t.match(/\((s|l|g|aq)\)$/); if(sm){ state = sm[1]; t = t.slice(0,-sm[0].length).trim(); }
+  let coef = 1;
+  const cm = t.match(/^(\d+)\s*/);
+  if(cm && t.length>cm[0].length && /[A-Z(e]/.test(t[cm[0].length])){ coef = +cm[1]; t = t.slice(cm[0].length); }
+  if(!t) throw new Error('A species is missing in the equation.');
+  if(t==='e⁻' || t==='e') return {f:'e-', key:'e-', coef, state:'', ch:'-', e:true, side, M:null, counts:{}, order:[]};
+  let ch = '';
+  const chm = t.match(/\^(\d*)([⁺⁻])$/); if(chm){ ch = (chm[1]||'') + (chm[2]==='⁺'?'+':'-'); t = t.slice(0,-chm[0].length); }
+  const pf = parseFormula(t);
+  return {f:t, key: t+(ch?'^'+ch:''), coef, state, ch, e:false, side, counts:pf.counts, order:pf.order, M:mrOf(pf)};
+}
+function parseEquation(str){
+  let s = String(str).trim();
+  let rev = false;
+  if(/<=>|⇌/.test(s)){ rev = true; s = s.replace(/<=>|⇌/,'→'); }
+  s = s.replace(/-->|->|=>|=/,'→');
+  const sides = s.split('→');
+  if(sides.length!==2 || !sides[0].trim() || !sides[1].trim()) throw new Error('Write the equation with one arrow, for example: 2H2 + O2 -> 2H2O');
+  const protect = x => x.replace(/\^(\d*)\+/g,'^$1⁺').replace(/\^(\d*)-/g,'^$1⁻').replace(/(^|[\s+\d])e-(?=\s|$|\+)/g,'$1e⁻');
+  const species = [];
+  ['r','p'].forEach((side,k)=>{
+    protect(sides[k]).split('+').map(x=>x.trim()).filter(Boolean).forEach(tok=>species.push(parseSpecies(tok,side)));
+  });
+  return {species, rev};
+}
+function checkBalance(rx){
+  const tally = side => { const t={}; let c=0; rx.species.filter(s=>s.side===side).forEach(s=>{ if(s.e){ c -= s.coef; return; } for(const el in s.counts) t[el]=(t[el]||0)+s.counts[el]*s.coef; c += chargeNum(s.ch)*s.coef; }); return {t,c}; };
+  const L = tally('r'), P = tally('p');
+  const els = [...new Set([...Object.keys(L.t),...Object.keys(P.t)])];
+  const rows = els.map(el=>({el, l:L.t[el]||0, r:P.t[el]||0}));
+  return {ok: rows.every(r=>r.l===r.r) && L.c===P.c, rows, lc:L.c, rc:P.c, charged: rx.species.some(s=>s.e||s.ch)};
+}
+
+const RX = {
+  octane:     {name:'Burning octane (petrol)', cat:'Combustion', eq:'2C8H18(l) + 25O2(g) -> 16CO2(g) + 18H2O(l)', emit:['CO2'], eco:{type:'combustion', fuel:'C8H18'}},
+  methane:    {name:'Burning methane (natural gas)', cat:'Combustion', eq:'CH4(g) + 2O2(g) -> CO2(g) + 2H2O(l)', emit:['CO2'], eco:{type:'combustion', fuel:'CH4'}},
+  ethanolburn:{name:'Burning ethanol (biofuel)', cat:'Combustion', eq:'C2H5OH(l) + 3O2(g) -> 2CO2(g) + 3H2O(l)', emit:['CO2'], eco:{type:'combustion', fuel:'C2H5OH', bio:true}},
+  propane:    {name:'Burning propane (LPG)', cat:'Combustion', eq:'C3H8(g) + 5O2(g) -> 3CO2(g) + 4H2O(l)', emit:['CO2'], eco:{type:'combustion', fuel:'C3H8'}},
+  coal:       {name:'Burning coal (as carbon)', cat:'Combustion', eq:'C(s) + O2(g) -> CO2(g)', emit:['CO2'], eco:{type:'combustion', fuel:'C'}},
+  reforming:  {name:'Hydrogen from methane (steam reforming)', cat:'Industrial synthesis', eq:'CH4(g) + 2H2O(g) -> CO2(g) + 4H2(g)', desired:'H2', emit:['CO2'], eco:{type:'atomEconomy'}},
+  hydrogen:   {name:'Burning hydrogen', cat:'Combustion', eq:'2H2(g) + O2(g) -> 2H2O(l)', eco:{type:'combustion', fuel:'H2'}},
+  limestone:  {name:'Thermal decomposition of limestone', cat:'Thermal decomposition', eq:'CaCO3(s) -> CaO(s) + CO2(g)', desired:'CaO', emit:['CO2'], eco:{type:'thermal', gas:'CO2'}},
+  cuco3:      {name:'Thermal decomposition of copper(II) carbonate', cat:'Thermal decomposition', eq:'CuCO3(s) -> CuO(s) + CO2(g)', desired:'CuO', emit:['CO2'], eco:{type:'thermal', gas:'CO2'}},
+  haber:      {name:'Haber process (ammonia)', cat:'Industrial synthesis', eq:'N2(g) + 3H2(g) <=> 2NH3(g)', desired:'NH3', eco:{type:'atomEconomy'}},
+  contact:    {name:'Contact process (sulfur trioxide)', cat:'Industrial synthesis', eq:'2SO2(g) + O2(g) <=> 2SO3(g)', desired:'SO3', eco:{type:'atomEconomy'}},
+  ferment:    {name:'Ethanol by fermentation', cat:'Industrial synthesis', eq:'C6H12O6(aq) -> 2C2H5OH(aq) + 2CO2(g)', desired:'C2H5OH', emit:['CO2'], eco:{type:'atomEconomy', compare:'hydration'}},
+  hydration:  {name:'Ethanol by hydration of ethene', cat:'Industrial synthesis', eq:'C2H4(g) + H2O(g) -> C2H5OH(g)', desired:'C2H5OH', eco:{type:'atomEconomy', compare:'ferment'}},
+  nh4no3:     {name:'Making ammonium nitrate', cat:'Fertiliser production', eq:'NH3(g) + HNO3(aq) -> NH4NO3(aq)', desired:'NH4NO3', eco:{type:'fertiliser'}},
+  nh42so4:    {name:'Making ammonium sulfate', cat:'Fertiliser production', eq:'2NH3(g) + H2SO4(aq) -> (NH4)2SO4(aq)', desired:'(NH4)2SO4', eco:{type:'fertiliser'}},
+  blast:      {name:'Blast furnace: reducing iron(III) oxide', cat:'Metal extraction', eq:'Fe2O3(s) + 3CO(g) -> 2Fe(l) + 3CO2(g)', desired:'Fe', emit:['CO2'], eco:{type:'extraction', compound:'Fe2O3', metal:'Fe', grade:60}},
+  alumina:    {name:'Aluminium from aluminium oxide (overall)', cat:'Metal extraction', eq:'2Al2O3(l) -> 4Al(l) + 3O2(g)', desired:'Al', eco:{type:'extraction', compound:'Al2O3', metal:'Al', grade:50}},
+  displace:   {name:'Recovering copper with scrap iron', cat:'Redox', eq:'Fe(s) + CuSO4(aq) -> FeSO4(aq) + Cu(s)', desired:'Cu', eco:{type:'recovery', metal:'Cu', sacrificial:'Fe', left:'FeSO4'}},
+  mghcl:      {name:'Magnesium with hydrochloric acid', cat:'Redox', eq:'Mg(s) + 2HCl(aq) -> MgCl2(aq) + H2(g)', desired:'H2', eco:{type:'microscale', reagent:'HCl'}},
+  naohhcl:    {name:'Neutralising hydrochloric acid with NaOH', cat:'Acid–base', eq:'NaOH(aq) + HCl(aq) -> NaCl(aq) + H2O(l)', eco:{type:'neutralisation', acid:'HCl', base:'NaOH', salt:'NaCl'}},
+  h2so4naoh:  {name:'Sulfuric acid titrated with NaOH', cat:'Acid–base', eq:'H2SO4(aq) + 2NaOH(aq) -> Na2SO4(aq) + 2H2O(l)', eco:{type:'acidRain', acid:'H2SO4'}},
+  lime:       {name:'Treating acid waste with slaked lime', cat:'Acid–base', eq:'Ca(OH)2(s) + H2SO4(aq) -> CaSO4(s) + 2H2O(l)', eco:{type:'neutralisation', acid:'H2SO4', base:'Ca(OH)2', salt:'CaSO4'}},
+  fgd:        {name:'Flue-gas desulfurisation', cat:'Pollution control', eq:'CaCO3(s) + SO2(g) -> CaSO3(s) + CO2(g)', emit:['CO2'], eco:{type:'pollutionControl', pollutant:'SO2', reagent:'CaCO3', released:'CO2', solid:'CaSO3'}},
+  cuoh2:      {name:'Removing copper ions from wastewater', cat:'Precipitation', eq:'CuSO4(aq) + 2NaOH(aq) -> Cu(OH)2(s) + Na2SO4(aq)', desired:'Cu(OH)2', eco:{type:'precipitation', solid:'Cu(OH)2', ion:'Cu'}},
+  agcl:       {name:'Recovering silver as silver chloride', cat:'Precipitation', eq:'AgNO3(aq) + NaCl(aq) -> AgCl(s) + NaNO3(aq)', desired:'AgCl', eco:{type:'precipitation', solid:'AgCl', ion:'Ag', valuable:true}},
+  elAl:       {name:'Electrolysis: aluminium at the cathode', cat:'Electrolysis', eq:'Al^3+(l) + 3e- -> Al(l)', desired:'Al', eco:{type:'electrolysis', voltage:4.5, product:'Al'}},
+  elCu:       {name:'Electrolysis: refining copper', cat:'Electrolysis', eq:'Cu^2+(aq) + 2e- -> Cu(s)', desired:'Cu', eco:{type:'electrolysis', voltage:0.3, product:'Cu'}},
+  elH2:       {name:'Electrolysis: hydrogen at the cathode', cat:'Electrolysis', eq:'2H^+(aq) + 2e- -> H2(g)', desired:'H2', eco:{type:'electrolysis', voltage:2.0, product:'H2'}},
+  cuso4hyd:   {name:'Heating hydrated copper(II) sulfate', cat:'Hydrated salts', eq:'CuSO4.5H2O(s) -> CuSO4(s) + 5H2O(g)', desired:'CuSO4', eco:{type:'hydrate', hydrate:'CuSO4.5H2O'}},
+  soda:       {name:'Heating washing soda', cat:'Hydrated salts', eq:'Na2CO3.10H2O(s) -> Na2CO3(s) + 10H2O(g)', desired:'Na2CO3', eco:{type:'hydrate', hydrate:'Na2CO3.10H2O'}},
+  photo:      {name:'Photosynthesis', cat:'Biological', eq:'6CO2(g) + 6H2O(l) -> C6H12O6(aq) + 6O2(g)', desired:'C6H12O6', eco:{type:'carbonCapture'}},
+};
+const RX_CACHE = {};
+function buildReaction(def, id){
+  const {species, rev} = parseEquation(def.eq);
+  return {id, name:def.name, cat:def.cat, rev, species, desired:def.desired||null, emit:def.emit||[], eco:def.eco||{type:'generic'}};
+}
+function getRx(id){ if(!RX_CACHE[id]) RX_CACHE[id] = buildReaction(RX[id], id); return RX_CACHE[id]; }
+function findSp(rx, ref){ const k = rx.species.findIndex(s=>s.key===ref); return k>=0? k : rx.species.findIndex(s=>s.f===ref && !s.ch); }
+function aeOf(rx, key){
+  const d = rx.species[findSp(rx,key)]; if(!d || d.side!=='p') return null;
+  const den = rx.species.filter(s=>s.side==='r' && !s.e).reduce((a,s)=>a+s.coef*s.M,0);
+  return d.coef*d.M/den*100;
+}
+
+/* ---------- quantity helpers ---------- */
+function qty(g){
+  switch(g.kind){
+    case 'mass': case 'volume': return `${fmt(g.value)} ${ULBL[g.unit]}`;
+    case 'moles': return `${fmt(g.value)} mol`;
+    case 'solution': return `${fmt(g.vol)} ${ULBL[g.volUnit]} of ${fmt(g.conc)} mol/dm³`;
+    case 'charge': return `${fmt(g.I)} A for ${fmt(g.t)} ${ULBL[g.tUnit]}`;
+    case 'particles': return `${fmt(g.value)} particles`;
+  }
+  return '';
+}
+function condInfo(cond){
+  cond = cond||{type:'rtp'};
+  if(cond.type==='stp') return {Vm:22.4, line:'1 mol of any gas occupies 22.4 dm³ at s.t.p. (0 °C, 101 kPa)', short:'s.t.p.'};
+  if(cond.type==='custom') return {Vm:null, T:+cond.T, p:+cond.p, line:`Ideal gas equation pV = nRT, with R = 8.31 J/(mol·K), T = ${fmt(+cond.T)} K, p = ${fmt(+cond.p)} kPa (p in kPa × V in dm³ gives joules)`, short:`${fmt(+cond.T)} K and ${fmt(+cond.p)} kPa`};
+  return {Vm:24, line:'1 mol of any gas occupies 24 dm³ at r.t.p. (room temperature and pressure)', short:'r.t.p.'};
+}
+
+/* given amount → moles, with working lines */
+function toMoles(sp, g, cond, purity){
+  const L = [], wrong = []; let n, tip, guide;
+  const nm = fH(sp);
+  if(g.kind==='mass'){
+    let m = g.value*UNIT.mass[g.unit];
+    if(g.unit!=='g'){ L.push(`m = ${fmt(g.value)} ${ULBL[g.unit]} = ${fmt(m)} g`); wrong.push({v:g.value*(purity?purity/100:1)/sp.M, m:`Convert ${ULBL[g.unit]} to grams before dividing by M<sub>r</sub>.`}); }
+    if(purity){ const mp = m*purity/100; L.push(`Mass of pure ${nm} = ${purity}% × ${fmt(m)} g = ${fmt(mp)} g`); wrong.push({v:m/sp.M, m:'Only part of the sample is the pure substance. Multiply by the purity first.'}); m = mp; }
+    n = m/sp.M;
+    L.push(`n(${nm}) = mass ÷ ${sp.order.length===1&&sp.counts[sp.order[0]]===1?'A<sub>r</sub>':'M<sub>r</sub>'} = ${fmt(m)} ÷ ${fmtMr(sp.M)} = <b>${fmt(n)} mol</b>`);
+    wrong.push({v:m*sp.M, m:'You multiplied. Moles = mass ÷ M<sub>r</sub>.'});
+    tip = 'n = mass in grams ÷ M<sub>r</sub>';
+    guide = `n(${nm}) = mass in g ÷ ${fmtMr(sp.M)}` + (g.unit!=='g'? ` &nbsp;(first convert ${fmt(g.value)} ${ULBL[g.unit]} to grams)`:'') + (purity? ` &nbsp;(use only the ${purity}% that is pure)`:'');
+  } else if(g.kind==='volume'){
+    const V = g.value*UNIT.vol[g.unit];
+    if(g.unit!=='dm3'){ L.push(`V = ${fmt(g.value)} ${ULBL[g.unit]} = ${fmt(V)} dm³`); }
+    const c = condInfo(cond);
+    if(c.Vm){
+      n = V/c.Vm; L.push(`n(${nm}) = V ÷ ${c.Vm} = ${fmt(V)} ÷ ${c.Vm} = <b>${fmt(n)} mol</b>`);
+      if(g.unit!=='dm3') wrong.push({v:g.value/c.Vm, m:`Convert ${ULBL[g.unit]} to dm³ first (${g.unit==='cm3'?'divide by 1000':'multiply by 1000'}).`});
+      wrong.push({v:V*c.Vm, m:`Divide the volume by ${c.Vm}, do not multiply.`});
+      tip = `n = volume in dm³ ÷ ${c.Vm}`; guide = `n(${nm}) = volume in dm³ ÷ ${c.Vm}` + (g.unit!=='dm3'? ` &nbsp;(convert ${fmt(g.value)} ${ULBL[g.unit]} to dm³)`:'');
+    } else {
+      n = c.p*V/(RGAS*c.T); L.push(`n(${nm}) = pV ÷ RT = (${fmt(c.p)} × ${fmt(V)}) ÷ (8.31 × ${fmt(c.T)}) = <b>${fmt(n)} mol</b>`);
+      tip = 'n = pV ÷ RT (p in kPa, V in dm³)'; guide = `n(${nm}) = (${fmt(c.p)} × ${fmt(V)}) ÷ (8.31 × ${fmt(c.T)})`;
+    }
+  } else if(g.kind==='solution'){
+    const V = g.vol*UNIT.vol[g.volUnit];
+    if(g.volUnit!=='dm3'){ L.push(`V = ${fmt(g.vol)} ${ULBL[g.volUnit]} = ${fmt(V)} dm³`); wrong.push({v:g.conc*g.vol, m:`Convert ${ULBL[g.volUnit]} to dm³ first (divide cm³ by 1000).`}); }
+    n = g.conc*V; L.push(`n(${nm}) = c × V = ${fmt(g.conc)} × ${fmt(V)} = <b>${fmt(n)} mol</b>`);
+    wrong.push({v:g.conc/V, m:'Moles = concentration × volume (multiply).'});
+    tip = 'n = concentration (mol/dm³) × volume (dm³)'; guide = `n(${nm}) = ${fmt(g.conc)} mol/dm³ × volume in dm³` + (g.volUnit!=='dm3'? ` &nbsp;(${fmt(g.vol)} cm³ ÷ 1000)`:'');
+  } else if(g.kind==='moles'){
+    n = g.value; L.push(`n(${nm}) = <b>${fmt(n)} mol</b> (given)`); tip = 'Already in moles.'; guide = 'The amount is already given in moles.';
+  } else if(g.kind==='particles'){
+    n = g.value/NA; L.push(`n(${nm}) = N ÷ 6.02 × 10²³ = <b>${fmt(n)} mol</b>`); tip = 'n = number of particles ÷ 6.02 × 10²³'; guide = tip;
+  } else if(g.kind==='charge'){
+    const ts = g.t*UNIT.time[g.tUnit];
+    if(g.tUnit!=='s') L.push(`t = ${fmt(g.t)} ${ULBL[g.tUnit]} = ${fmt(ts)} s`);
+    const Q = g.I*ts;
+    L.push(`Q = I × t = ${fmt(g.I)} A × ${fmt(ts)} s = ${fmt(Q)} C`);
+    n = Q/FARADAY; L.push(`n(e<sup>−</sup>) = Q ÷ F = ${fmt(Q)} ÷ 96 500 = <b>${fmt(n)} mol</b>`);
+    if(g.tUnit!=='s') wrong.push({v:g.I*g.t/FARADAY, m:'Time must be in seconds before you calculate Q = I × t.'});
+    wrong.push({v:Q, m:'That is the charge Q in coulombs. Divide by the Faraday constant to get moles of electrons.'});
+    tip = 'Q = I × t (t in seconds), then n(e<sup>−</sup>) = Q ÷ 96 500'; guide = `Q = ${fmt(g.I)} A × time in seconds; then n(e<sup>−</sup>) = Q ÷ 96 500`;
+  } else throw new Error('Unknown amount type.');
+  return {n, lines:L, tip, guide, wrong};
+}
+
+/* moles → required quantity */
+function fromMoles(sp, n, t, cond){
+  const L = [], wrong = []; let value, unit, tip, guide, label;
+  const nm = fH(sp);
+  switch(t.kind){
+    case 'moles': value=n; unit='mol'; label=`n(${nm})`; L.push(`n(${nm}) = <b>${fmt(n)} mol</b>`); tip='Already in moles.'; guide=tip; break;
+    case 'mass': {
+      const m = n*sp.M; unit = t.unit; value = m/UNIT.mass[unit]; label = `Mass of ${nm}`;
+      L.push(`m = n × M<sub>r</sub> = ${fmt(n)} × ${fmtMr(sp.M)} = ${fmt(m)} g`);
+      if(unit!=='g'){ L.push(`${fmt(m)} g = <b>${fmt(value)} ${ULBL[unit]}</b>`); wrong.push({v:m, m:`That is in grams. The question asks for ${ULBL[unit]}.`}); }
+      wrong.push({v:n/sp.M/UNIT.mass[unit], m:'Mass = moles × M<sub>r</sub> (multiply, not divide).'});
+      tip = 'mass = n × M<sub>r</sub>'; guide = `mass = ${fmt(n)} mol × ${fmtMr(sp.M)}` + (unit!=='g'? `, then convert grams to ${ULBL[unit]}`:''); break; }
+    case 'volume': {
+      const c = condInfo(cond); let V;
+      if(c.Vm){ V = n*c.Vm; L.push(`V = n × ${c.Vm} = ${fmt(n)} × ${c.Vm} = ${fmt(V)} dm³`); tip=`volume (dm³) = n × ${c.Vm}`; guide=`V = ${fmt(n)} mol × ${c.Vm} dm³/mol`; wrong.push({v:n/c.Vm/UNIT.vol[t.unit], m:`Multiply by ${c.Vm}, do not divide.`}); }
+      else { V = n*RGAS*c.T/c.p; L.push(`V = nRT ÷ p = (${fmt(n)} × 8.31 × ${fmt(c.T)}) ÷ ${fmt(c.p)} = ${fmt(V)} dm³`); tip='V = nRT ÷ p (p in kPa gives dm³)'; guide=`V = (${fmt(n)} × 8.31 × ${fmt(c.T)}) ÷ ${fmt(c.p)}`; wrong.push({v:n*24/UNIT.vol[t.unit], m:'24 dm³/mol only applies at room temperature. Use pV = nRT at these conditions.'}); }
+      unit = t.unit; value = V/UNIT.vol[unit]; label = `Volume of ${nm}`;
+      if(unit!=='dm3'){ L.push(`${fmt(V)} dm³ = <b>${fmt(value)} ${ULBL[unit]}</b>`); wrong.push({v:V, m:`That is in dm³. Convert to ${ULBL[unit]}.`}); guide += `, then convert to ${ULBL[unit]}`; }
+      else L[L.length-1] = L[L.length-1].replace(`${fmt(V)} dm³`, `<b>${fmt(V)} dm³</b>`);
+      break; }
+    case 'solutionVolume': {
+      const V = n/t.conc; unit = t.unit; value = V/UNIT.vol[unit]; label = `Volume of ${fmt(t.conc)} mol/dm³ ${nm}`;
+      L.push(`V = n ÷ c = ${fmt(n)} ÷ ${fmt(t.conc)} = ${fmt(V)} dm³`);
+      if(unit!=='dm3'){ L.push(`${fmt(V)} dm³ = <b>${fmt(value)} ${ULBL[unit]}</b>`); wrong.push({v:V, m:'That is in dm³. Multiply by 1000 to get cm³.'}); }
+      wrong.push({v:n*t.conc/UNIT.vol[unit], m:'Volume = moles ÷ concentration.'});
+      tip = 'volume (dm³) = n ÷ concentration'; guide = `V = ${fmt(n)} mol ÷ ${fmt(t.conc)} mol/dm³` + (unit!=='dm3'? ', then convert dm³ to cm³':''); break; }
+    case 'concentration': {
+      const V = t.vol*UNIT.vol[t.volUnit]; value = n/V; unit = 'mol/dm³'; label = `Concentration of ${nm}`;
+      if(t.volUnit!=='dm3'){ L.push(`V = ${fmt(t.vol)} ${ULBL[t.volUnit]} = ${fmt(V)} dm³`); wrong.push({v:n/t.vol, m:'Convert the volume to dm³ before dividing.'}); }
+      L.push(`c = n ÷ V = ${fmt(n)} ÷ ${fmt(V)} = <b>${fmt(value)} mol/dm³</b>`);
+      wrong.push({v:n*V, m:'Concentration = moles ÷ volume (divide).'});
+      tip = 'concentration = n ÷ volume in dm³'; guide = `c = ${fmt(n)} mol ÷ volume in dm³` + (t.volUnit!=='dm3'? ` (${fmt(t.vol)} cm³ ÷ 1000)`:''); break; }
+    case 'particles': { value = n*NA; unit = 'particles'; label = `Number of ${nm} particles`; L.push(`N = n × 6.02 × 10²³ = <b>${fmt(value)}</b>`); tip='N = n × 6.02 × 10²³'; guide=tip; break; }
+    case 'charge': { value = n*FARADAY; unit='C'; label='Charge needed'; L.push(`Q = n(e<sup>−</sup>) × F = ${fmt(n)} × 96 500 = <b>${fmt(value)} C</b>`); tip='Q = n(e<sup>−</sup>) × 96 500'; guide=tip; break; }
+    case 'time': { const Q = n*FARADAY; const ts = Q/t.I; unit = t.unit; value = ts/UNIT.time[unit]; label='Time needed';
+      L.push(`Q = n(e<sup>−</sup>) × F = ${fmt(n)} × 96 500 = ${fmt(Q)} C`); L.push(`t = Q ÷ I = ${fmt(Q)} ÷ ${fmt(t.I)} = ${fmt(ts)} s`);
+      if(unit!=='s') L.push(`${fmt(ts)} s = <b>${fmt(value)} ${ULBL[unit]}</b>`); else L[L.length-1]=L[L.length-1].replace(`${fmt(ts)} s`,`<b>${fmt(ts)} s</b>`);
+      tip='Q = n(e<sup>−</sup>) × 96 500, then t = Q ÷ I'; guide=tip; break; }
+    default: throw new Error('Unknown target type.');
+  }
+  return {value, unit, label, lines:L, tip, guide, wrong};
+}
+
+/* ---------- reacting-quantities solver (the universal pattern) ---------- */
+function eqHTML(rx){
+  const side = s => rx.species.filter(x=>x.side===s).map(x=>`<span class="sp">${x.coef>1?`<span class="co">${x.coef}</span>`:''}${fH(x)}${x.state?`<span class="st">(${x.state})</span>`:''}</span>`).join(' <span class="op">+</span> ');
+  return `${side('r')} <span class="arrow">${rx.rev?'⇌':'→'}</span> ${side('p')}`;
+}
+function balanceNote(bal){
+  const atoms = bal.rows.map(r=>`${r.el} ${r.l}`).join(' · ');
+  if(bal.ok) return `<p class="note">Check the balance: ${atoms} on each side${bal.charged?`; total charge ${bal.lc} on each side`:''}. ✓</p>`;
+  const bad = bal.rows.filter(r=>r.l!==r.r).map(r=>`${r.el}: ${r.l} on the left, ${r.r} on the right`);
+  if(bal.lc!==bal.rc) bad.push(`charge: ${bal.lc} on the left, ${bal.rc} on the right`);
+  return `<p class="note bad">Not balanced: ${bad.join('; ')}.</p>`;
+}
+const KIND_WORD = {mass:'mass', volume:'gas volume', solution:'solution', moles:'amount', charge:'charge'};
+
+function solveReacting(p, rx){
+  const S = rx.species, steps = [];
+  const cond = p.cond || {type:'rtp'};
+  const G = p.givens.map(g=>({...g, i:findSp(rx,g.sp)}));
+  const t = {...p.target, i:findSp(rx,p.target.sp)};
+  G.forEach(g=>{ if(g.i<0) throw new Error(`${g.sp} is not in this equation.`); });
+  if(t.i<0) throw new Error(`${p.target.sp} is not in this equation.`);
+  const tsp = S[t.i];
+  if(!rx.single){ const bal = checkBalance(rx); if(!bal.ok) throw new Error('The equation is not balanced. '+balanceNote(bal).replace(/<[^>]+>/g,'')); }
+  for(const g of G){ const s=S[g.i];
+    if(g.kind==='charge' && !s.e) throw new Error('Current and time can only be given for electrons (e−) in a half-equation.');
+    if(s.e && g.kind!=='charge') throw new Error('For electrons, give a current and time.');
+    if(['mass','volume','moles','particles'].includes(g.kind) && !(g.value>0)) throw new Error('Enter a positive amount for '+s.f+'.');
+    if(g.kind==='solution' && !(g.conc>0 && g.vol>0)) throw new Error('Enter a positive concentration and volume.');
+    if(g.kind==='charge' && !(g.I>0 && g.t>0)) throw new Error('Enter a positive current and time.');
+  }
+  if(G.length===2){
+    if(G[0].i===G[1].i) throw new Error('Choose two different reactants.');
+    if(G.some(g=>S[g.i].side!=='r')) throw new Error('For a limiting-reactant problem both given substances must be reactants.');
+  }
+  if(t.kind==='purity' && G.some(g=>g.i===t.i)) throw new Error('For percentage purity, give the amount of a different substance (for example the CO₂ or other product formed), not the impure substance itself.');
+  if(t.kind==='percentYield' && tsp.side!=='p') throw new Error('Percentage yield is calculated for a product.');
+  if(tsp.e && !['charge','time'].includes(t.kind)) throw new Error('For electrons, ask for charge or time.');
+  if(['charge','time'].includes(t.kind) && !tsp.e) throw new Error('Charge and time only apply to electrons (e−).');
+  const gas = G.some(g=>g.kind==='volume') || t.kind==='volume';
+
+  // 1 Question
+  steps.push({id:'question', body:`<p class="qtext">${p.qText}</p>`});
+  // 2 Equation
+  if(rx.single) steps.push({id:'equation', skipped:true, body:'<p>Only one substance is involved, so no equation is needed.</p>'});
+  else steps.push({id:'equation', body:`${rx.name?`<p class="rxname">${rx.name}</p>`:''}<div class="eq">${eqHTML(rx)}</div>${balanceNote(checkBalance(rx))}`});
+  // 3 Data
+  const dl = []; const seen = new Set();
+  const needM = i => G.some(g=>g.i===i && g.kind==='mass') || (i===t.i && ['mass','percentYield','purity'].includes(t.kind));
+  [...G.map(g=>g.i), t.i].forEach(i=>{ if(seen.has(i)) return; seen.add(i); const s=S[i];
+    if(s.e) dl.push('Faraday constant: F = 96 500 C per mole of electrons');
+    else if(needM(i)) dl.push(`${mrLabel(s)} = ${mrBreak(s)}`);
+  });
+  G.forEach(g=>dl.push(`Given: ${KIND_WORD[g.kind]||'amount'} of ${fH(S[g.i])} = ${qty(g)}`));
+  if(p.purity) dl.push(`Purity of ${fH(S[G[0].i])} = ${p.purity}%`);
+  if(t.kind==='concentration') dl.push(`Volume of ${fH(tsp)} solution = ${fmt(t.vol)} ${ULBL[t.volUnit]}`);
+  if(t.kind==='solutionVolume') dl.push(`Concentration of ${fH(tsp)} solution = ${fmt(t.conc)} mol/dm³`);
+  if(t.kind==='time') dl.push(`Current = ${fmt(t.I)} A`);
+  if(t.kind==='percentYield') dl.push(`Actual mass of ${fH(tsp)} collected = ${fmt(t.actual)} ${ULBL[t.actualUnit]}`);
+  if(t.kind==='purity') dl.push(`Mass of impure sample = ${fmt(t.sample)} ${ULBL[t.sampleUnit]}`);
+  if(p.yield) dl.push(`Percentage yield = ${p.yield}%`);
+  if(gas) dl.push(condInfo(cond).line);
+  steps.push({id:'data', body:lines(dl)});
+
+  // 4 Moles
+  const ml = [], mchecks = [];
+  G.forEach((g,k)=>{ const r = toMoles(S[g.i], g, cond, k===0? p.purity : null); g.n = r.n; if(G.length>1) ml.push(`<span class="sub">${fH(S[g.i])}</span>`); ml.push(...r.lines);
+    mchecks.push({label:`n(${fH(S[g.i])})`, answer:r.n, unit:'mol', tip:r.tip, guide:r.guide, wrong:r.wrong}); });
+  steps.push({id:'moles', ask: G.length>1? 'Convert both given amounts into moles.' : 'Convert the given amount into moles.', body:lines(ml), checks:mchecks});
+
+  // 5 Ratio
+  let xi, lim=null, ex=null;
+  const nTof = x => x*tsp.coef;
+  if(G.length===1){
+    const g = G[0], sg = S[g.i]; xi = g.n/sg.coef;
+    if(g.i===t.i){
+      steps.push({id:'ratio', skipped:true, body:`<p>The answer is about the same substance, ${fH(tsp)}, so there is no ratio to apply.</p>`});
+    } else {
+      const nT = nTof(xi);
+      const frac = tsp.coef===sg.coef? '1' : `${tsp.coef}/${sg.coef}`;
+      const rl = [`From the equation: <b>${sg.coef} ${fH(sg)} : ${tsp.coef} ${fH(tsp)}</b>`,
+        `n(${fH(tsp)}) = n(${fH(sg)}) × ${frac} = ${fmt(g.n)} × ${frac} = <b>${fmt(nT)} mol</b>`];
+      const wrong = [];
+      if(tsp.coef!==sg.coef){ wrong.push({v:g.n, m:'That is the number of moles you started with. Apply the mole ratio from the equation.'}); wrong.push({v:g.n*sg.coef/tsp.coef, m:`The ratio is upside down. Multiply by ${tsp.coef} ÷ ${sg.coef}.`}); }
+      steps.push({id:'ratio', ask:'Use the coefficients in the balanced equation to find moles of the substance you want.', body:lines(rl),
+        checks:[{label:`n(${fH(tsp)})`, answer:nT, unit:'mol', tip:'n(wanted) = n(given) × (coefficient of wanted ÷ coefficient of given)', guide:`Equation ratio ${sg.coef} ${fH(sg)} : ${tsp.coef} ${fH(tsp)}, so multiply n(${fH(sg)}) by ${tsp.coef} ÷ ${sg.coef}`, wrong}]});
+    }
+  } else {
+    const rl = ['Divide each amount by its coefficient in the equation. The smaller result belongs to the limiting reactant.'];
+    G.forEach(g=>{ const s=S[g.i]; g.r = g.n/s.coef; rl.push(`${fH(s)}: ${fmt(g.n)} ÷ ${s.coef} = ${fmt(g.r)}`); });
+    lim = G[0].r <= G[1].r ? G[0] : G[1]; ex = lim===G[0]? G[1] : G[0];
+    xi = lim.r;
+    rl.push(`<b>${fH(S[lim.i])} is the limiting reactant</b>; ${fH(S[ex.i])} is in excess.`);
+    const nT = nTof(xi);
+    const sl = S[lim.i];
+    const frac = tsp.coef===sl.coef? '1' : `${tsp.coef}/${sl.coef}`;
+    rl.push(`n(${fH(tsp)}) = n(${fH(sl)}) × ${frac} = ${fmt(lim.n)} × ${frac} = <b>${fmt(nT)} mol</b>`);
+    steps.push({id:'ratio', ask:'Decide which reactant runs out first, then use it with the mole ratio.', body:lines(rl), checks:[
+      {type:'choice', label:'Limiting reactant', options:G.map(g=>({v:String(g.i), html:fH(S[g.i])})), answer:String(lim.i), tip:'Divide each number of moles by its coefficient. The smaller value runs out first.', guide:`Compare n ÷ coefficient: ${G.map(g=>`${fH(S[g.i])} ${fmt(g.n)} ÷ ${S[g.i].coef}`).join(' vs ')}`, wrongMsg:'That reactant is in excess. Divide each amount by its coefficient and pick the smaller.'},
+      {label:`n(${fH(tsp)})`, answer:nT, unit:'mol', tip:'Only the limiting reactant decides how much forms.', guide:`n(${fH(tsp)}) = n(limiting) × (coefficient of ${fH(tsp)} ÷ coefficient of limiting)`,
+        wrong:[{v:ex.r*tsp.coef, m:'You used the reactant in excess. The limiting reactant decides how much forms.'}]}]});
+  }
+
+  // 6 Required
+  const nT = nTof(xi);
+  let fin, rl = [], extra = [];
+  if(t.kind==='percentYield'){
+    const theo = nT*tsp.M, act = t.actual*UNIT.mass[t.actualUnit];
+    rl.push(`Theoretical mass = n × M<sub>r</sub> = ${fmt(nT)} × ${fmtMr(tsp.M)} = ${fmt(theo)} g`);
+    if(t.actualUnit!=='g') rl.push(`Actual mass = ${fmt(t.actual)} ${ULBL[t.actualUnit]} = ${fmt(act)} g`);
+    const pct = act/theo*100;
+    rl.push(`% yield = actual ÷ theoretical × 100 = ${fmt(act)} ÷ ${fmt(theo)} × 100 = <b>${fmt(pct)}%</b>`);
+    fin = {value:pct, unit:'%', label:'Percentage yield', tip:'% yield = actual mass ÷ theoretical mass × 100', guide:`First find the theoretical mass (n × ${fmtMr(tsp.M)}), then actual ÷ theoretical × 100`,
+      wrong:[{v:theo/act*100, m:'Upside down: divide actual by theoretical.'},{v:theo/UNIT.mass[t.actualUnit], m:'That is the theoretical mass. Now compare the actual mass with it as a percentage.'}], theo, act};
+  } else if(t.kind==='purity'){
+    const pure = nT*tsp.M, samp = t.sample*UNIT.mass[t.sampleUnit];
+    rl.push(`Mass of pure ${fH(tsp)} = n × M<sub>r</sub> = ${fmt(nT)} × ${fmtMr(tsp.M)} = ${fmt(pure)} g`);
+    if(t.sampleUnit!=='g') rl.push(`Sample mass = ${fmt(t.sample)} ${ULBL[t.sampleUnit]} = ${fmt(samp)} g`);
+    const pct = pure/samp*100;
+    rl.push(`% purity = pure mass ÷ sample mass × 100 = ${fmt(pure)} ÷ ${fmt(samp)} × 100 = <b>${fmt(pct)}%</b>`);
+    fin = {value:pct, unit:'%', label:`Percentage purity of ${fH(tsp)}`, tip:'% purity = mass of pure substance ÷ mass of sample × 100', guide:`Mass of pure ${fH(tsp)} = n × ${fmtMr(tsp.M)}; then ÷ ${fmt(samp)} g × 100`,
+      wrong:[{v:samp/pure*100, m:'Upside down: divide the pure mass by the sample mass.'},{v:pure, m:'That is the mass of pure substance. Now turn it into a percentage of the sample.'}]};
+  } else {
+    const r = fromMoles(tsp, nT, t, cond);
+    rl.push(...r.lines);
+    fin = {value:r.value, unit:r.unit, label:r.label, tip:r.tip, guide:r.guide, wrong:r.wrong};
+    if(p.yield && ['mass','volume','moles'].includes(t.kind)){
+      const act = r.value*p.yield/100;
+      rl[rl.length-1] = rl[rl.length-1].replace(/<\/?b>/g,'');
+      rl.push(`Actual = theoretical × ${p.yield}% = ${fmt(r.value)} × ${p.yield/100} = <b>${fmt(act)} ${ULBL[r.unit]||r.unit}</b>`);
+      fin.wrong = [...fin.wrong, {v:r.value, m:`That is the theoretical amount. Only ${p.yield}% is actually obtained.`}];
+      fin.tip += `; then × ${p.yield}% yield`; fin.guide += `; then multiply by ${p.yield/100}`;
+      fin.theo = r.value; fin.value = act; fin.label = 'Actual '+r.label.charAt(0).toLowerCase()+r.label.slice(1);
+    }
+  }
+  let excess = null;
+  if(ex){
+    const s = S[ex.i]; const used = xi*s.coef, left = ex.n-used;
+    excess = {i:ex.i, n:left, g: s.M? left*s.M : null};
+    extra.push(`Excess ${fH(s)} left over = ${fmt(ex.n)} − (${s.coef} × ${fmt(xi)}) = ${fmt(left)} mol${s.M? ` = ${fm(left*s.M)}`:''}`);
+  }
+  const unitTxt = ULBL[fin.unit]||fin.unit;
+  steps.push({id:'required', ask:`Turn moles of ${fH(tsp)} into the quantity the question asks for.`, body:lines(rl)+(extra.length? lines(extra,'muted'):''),
+    checks:[{label:fin.label, answer:fin.value, unit:unitTxt, tip:fin.tip, guide:fin.guide, wrong:fin.wrong, final:true}]});
+  // 7 Answer
+  steps.push({id:'answer', body:answerBox(fin.label, fin.value, unitTxt) + (excess? `<p class="note">${fH(S[ex.i])} was in excess: ${fmt(excess.n)} mol${excess.g?` (${fm(excess.g)})`:''} is left unreacted.</p>`:'')});
+
+  // 8 Eco
+  const masses = rx.single? null : S.map(s=> s.e? null : s.coef*xi*s.M);
+  const ctx = {rx, p, xi, masses, excess, t, tsp, fin, G, cond, eco: p.eco || rx.eco, unitTxt};
+  steps.push({id:'eco', body:ecoBody(ctx)});
+  return {steps, final:fin};
+}
+
+/* ---------- atom economy ---------- */
+function solveAE(p, rx){
+  const S = rx.species; const d = S[findSp(rx, p.desired || rx.desired)];
+  if(!d || d.side!=='p') throw new Error('Choose a product as the useful (desired) product.');
+  const bal = checkBalance(rx); if(!bal.ok) throw new Error('The equation is not balanced.');
+  const steps = [];
+  steps.push({id:'question', body:`<p class="qtext">${p.qText}</p>`});
+  steps.push({id:'equation', body:`<p class="rxname">${rx.name}</p><div class="eq">${eqHTML(rx)}</div>${balanceNote(bal)}<p class="note">Atom economy only needs the balanced equation. No measured masses are used.</p>`});
+  const dl = S.filter(s=>!s.e).map(s=>`${mrLabel(s)} = ${mrBreak(s)}`);
+  dl.push(`Useful product: ${fH(d)}`);
+  steps.push({id:'data', body:lines(dl)});
+  const reacts = S.filter(s=>s.side==='r' && !s.e);
+  const tot = reacts.reduce((a,s)=>a+s.coef*s.M,0);
+  const ml = reacts.map(s=>`${fH(s)}: ${s.coef} × ${fmtMr(s.M)} = ${fmt(s.coef*s.M,4)}`);
+  ml.push(`Total mass of reactants = <b>${fmt(tot,4)}</b>`);
+  steps.push({id:'moles', title:'Masses from the equation', ask:'Multiply each reactant\'s M<sub>r</sub> by its coefficient and add them up.', body:lines(ml),
+    checks:[{label:'Total mass of reactants', answer:tot, unit:'', tip:'Total = Σ (coefficient × M<sub>r</sub>) for all reactants', guide:reacts.map(s=>`${s.coef} × ${fmtMr(s.M)}`).join(' + '), wrong:[{v:reacts.reduce((a,s)=>a+s.M,0), m:'Multiply each M<sub>r</sub> by its coefficient in the equation.'}]}]});
+  const dm = d.coef*d.M;
+  steps.push({id:'ratio', title:'Useful fraction', body:lines([`Mass of useful product in the equation = ${d.coef} × ${fmtMr(d.M)} = ${fmt(dm,4)}`, `Fraction = ${fmt(dm,4)} ÷ ${fmt(tot,4)}`])});
+  const ae = dm/tot*100;
+  steps.push({id:'required', ask:'Work out the atom economy as a percentage.', body:lines([`Atom economy = mass of useful product ÷ total mass of reactants × 100`, `= ${fmt(dm,4)} ÷ ${fmt(tot,4)} × 100 = <b>${fmt(ae)}%</b>`]),
+    checks:[{label:'Atom economy', answer:ae, unit:'%', tip:'Atom economy = (coefficient × M<sub>r</sub> of useful product) ÷ total reactant mass × 100', guide:`${d.coef} × ${fmtMr(d.M)} ÷ ${fmt(tot,4)} × 100`, wrong:[{v:d.M/tot*100, m:'Include the coefficient of the useful product.'},{v:tot/dm*100, m:'Upside down: useful product ÷ total reactants.'}], final:true}]});
+  steps.push({id:'answer', body:answerBox(`Atom economy for ${fH(d)}`, ae, '%')});
+  const masses = S.map(s=> s.e? null : s.coef*s.M);
+  const ctx = {rx, p, xi:1, masses, perEquation:true, tsp:d, fin:{value:ae, unit:'%'}, eco:{...(rx.eco||{}), type:'atomEconomy'}, unitTxt:'%'};
+  steps.push({id:'eco', body:ecoBody(ctx)});
+  return {steps, final:{value:ae, unit:'%'}};
+}
+
+/* ---------- empirical & molecular formula ---------- */
+function toFormula(pairs){ return pairs.map(([el,n])=>el+(n>1?n:'')).join(''); }
+function solveEmpirical(p){
+  const rows = p.data.filter(r=>r[0] && +r[1]>0).map(r=>[r[0], +r[1]]);
+  if(rows.length<2) throw new Error('Enter at least two elements with their percentages or masses.');
+  rows.forEach(([el])=>{ if(!(el in AR)) throw new Error(`"${el}" is not an element in the data table.`); });
+  const steps = []; const unit = p.mode==='mass'? 'g' : '%';
+  steps.push({id:'question', body:`<p class="qtext">${p.qText}</p>`});
+  steps.push({id:'equation', skipped:true, body:'<p>No equation here. You are working out a formula from composition data, but the method still goes through moles and a ratio.</p>'});
+  steps.push({id:'data', body:lines([...rows.map(([el,v])=>`${el}: ${fmt(v)} ${unit}, A<sub>r</sub> = ${AR[el]}`), ...(p.mode==='percent'?['Treat percentages as the mass in grams of a 100 g sample.']:[]), ...(p.Mr? [`M<sub>r</sub> of the compound = ${fmt(+p.Mr)}`]:[])])});
+  const n = rows.map(([el,v])=>v/AR[el]);
+  steps.push({id:'moles', ask:'Divide each mass (or percentage) by the element\'s A<sub>r</sub>.', body:lines(rows.map(([el,v],k)=>`n(${el}) = ${fmt(v)} ÷ ${AR[el]} = <b>${fmt(n[k])}</b>`)),
+    checks: rows.map(([el,v],k)=>({label:`n(${el})`, answer:n[k], unit:'mol', tip:'n = mass ÷ A<sub>r</sub>', guide:`n(${el}) = ${fmt(v)} ÷ ${AR[el]}`, wrong:[{v:v*AR[el], m:'Divide by A<sub>r</sub>, do not multiply.'}]}))});
+  const min = Math.min(...n); const r = n.map(x=>x/min);
+  let mult = 1; for(const m of [1,2,3,4,5,6]){ if(r.every(x=>Math.abs(x*m-Math.round(x*m))<0.1)){ mult=m; break; } }
+  const whole = r.map(x=>Math.round(x*mult));
+  const pairs = rows.map(([el],k)=>[el, whole[k]]);
+  const ef = toFormula(pairs); const efc = parseFormula(ef).counts;
+  const rl = [`Divide by the smallest (${fmt(min)}): ${rows.map(([el],k)=>`${el} ${fmt(r[k])}`).join(' : ')}`];
+  if(mult>1) rl.push(`Not all whole numbers, so multiply by ${mult}: ${rows.map(([el],k)=>`${el} ${fmt(r[k]*mult)}`).join(' : ')}`);
+  rl.push(`Simplest whole-number ratio = <b>${whole.join(' : ')}</b> → empirical formula <b>${fStr(ef)}</b>`);
+  steps.push({id:'ratio', title:'Simplest ratio', ask:'Divide every amount by the smallest, then round to whole numbers.', body:lines(rl),
+    checks:[{type:'formula', label:'Empirical formula', counts:efc, answerText:ef, tip:'Divide all mole values by the smallest one. If you get .5 or .33, multiply everything by 2 or 3.', guide:`Divide each value by ${fmt(min)}`}]});
+  let finalF = ef, req = [], checks = [];
+  if(p.Mr){
+    const em = mrOf(parseFormula(ef)); const k = Math.round(+p.Mr/em);
+    finalF = toFormula(pairs.map(([el,c])=>[el,c*k]));
+    req = [`Mass of one empirical unit ${fStr(ef)} = ${fmt(em,4)}`, `Number of units = M<sub>r</sub> ÷ empirical mass = ${fmt(+p.Mr)} ÷ ${fmt(em,4)} = <b>${k}</b>`, `Molecular formula = (${fStr(ef)})<sub>${k}</sub> = <b>${fStr(finalF)}</b>`];
+    checks = [{label:'Number of empirical units', answer:k, unit:'', tip:'n = M<sub>r</sub> ÷ mass of empirical formula', guide:`${fmt(+p.Mr)} ÷ mass of ${fStr(ef)}`}, {type:'formula', label:'Molecular formula', counts:parseFormula(finalF).counts, answerText:finalF, tip:'Multiply every subscript in the empirical formula by n.', final:true}];
+    steps.push({id:'required', title:'Molecular formula', ask:'Use the M<sub>r</sub> to scale up the empirical formula.', body:lines(req), checks});
+  } else {
+    steps.push({id:'required', skipped:true, body:'<p>No M<sub>r</sub> was given, so the empirical formula is the answer.</p>'});
+    steps[steps.length-2].checks[0].final = true;
+  }
+  steps.push({id:'answer', body:answerBoxText(p.Mr?'Molecular formula':'Empirical formula', fStr(finalF))});
+  const sp = parseSpecies(finalF,'p');
+  steps.push({id:'eco', body:ecoBody({p, eco:p.eco||{type:'note'}, formulaSp:sp, fin:{text:finalF}})});
+  return {steps, final:{text:finalF}};
+}
+
+/* ---------- water of crystallisation ---------- */
+function solveHydrate(p){
+  const salt = parseSpecies(p.salt,'r'); const water = parseSpecies('H2O','p');
+  const hyd = +p.hyd, anh = +p.anh;
+  if(!(hyd>0 && anh>0 && hyd>anh)) throw new Error('The hydrated mass must be larger than the anhydrous mass.');
+  const steps = [];
+  const w = hyd-anh, ns = anh/salt.M, nw = w/18, x = nw/ns, xr = Math.round(x);
+  steps.push({id:'question', body:`<p class="qtext">${p.qText}</p>`});
+  steps.push({id:'equation', body:`<div class="eq"><span class="sp">${fH(salt)}·<i>x</i>H<sub>2</sub>O<span class="st">(s)</span></span> <span class="arrow">→</span> <span class="sp">${fH(salt)}<span class="st">(s)</span></span> <span class="op">+</span> <span class="sp"><i>x</i>H<sub>2</sub>O<span class="st">(g)</span></span></div><p class="note">Heating drives off the water of crystallisation. The mass lost is water.</p>`});
+  steps.push({id:'data', ask:'Find the mass of water driven off.', body:lines([`${mrLabel(salt)} = ${mrBreak(salt)}`, `M<sub>r</sub>(H<sub>2</sub>O) = (2 × 1) + 16 = 18`, `Mass of hydrated salt = ${fmt(hyd)} g; after heating = ${fmt(anh)} g`, `Mass of water lost = ${fmt(hyd)} − ${fmt(anh)} = <b>${fmt(w)} g</b>`]),
+    checks:[{label:'Mass of water', answer:w, unit:'g', tip:'Water lost = mass before heating − mass after heating', guide:`${fmt(hyd)} − ${fmt(anh)}`}]});
+  steps.push({id:'moles', ask:'Convert both masses into moles.', body:lines([`n(${fH(salt)}) = ${fmt(anh)} ÷ ${fmtMr(salt.M)} = <b>${fmt(ns)} mol</b>`, `n(H<sub>2</sub>O) = ${fmt(w)} ÷ 18 = <b>${fmt(nw)} mol</b>`]),
+    checks:[{label:`n(${fH(salt)})`, answer:ns, unit:'mol', tip:'n = mass ÷ M<sub>r</sub>', guide:`${fmt(anh)} ÷ ${fmtMr(salt.M)}`, wrong:[{v:hyd/salt.M, m:'Use the mass after heating for the anhydrous salt.'}]},
+            {label:'n(H<sub>2</sub>O)', answer:nw, unit:'mol', tip:'n = mass ÷ 18', guide:`${fmt(w)} ÷ 18`}]});
+  steps.push({id:'ratio', ask:'Find how many moles of water there are per mole of salt.', body:lines([`x = n(H<sub>2</sub>O) ÷ n(${fH(salt)}) = ${fmt(nw)} ÷ ${fmt(ns)} = ${fmt(x)} ≈ <b>${xr}</b>`]),
+    checks:[{label:'x', answer:xr, unit:'', tip:'x = moles of water ÷ moles of anhydrous salt', guide:`${fmt(nw)} ÷ ${fmt(ns)}`, wrong:[{v:ns/nw, m:'Upside down: water ÷ salt.'}], final:true}]});
+  steps.push({id:'required', skipped:true, body:'<p>x is the whole number you need, so there is nothing more to convert.</p>'});
+  const hf = `${p.salt}.${xr}H2O`;
+  steps.push({id:'answer', body:answerBoxText('Formula of the hydrated salt', fStr(hf))});
+  steps.push({id:'eco', body:ecoBody({p, eco:{type:'hydrate', hydrate:hf}, fin:{value:xr}})});
+  return {steps, final:{value:xr}};
+}
+
+/* ---------- dispatcher ---------- */
+function solveProblem(p){
+  if(p.type==='empirical') return solveEmpirical({...p, qText:p.qText || p.q(p)});
+  if(p.type==='hydrate') return solveHydrate({...p, qText:p.qText || p.q(p)});
+  let rx;
+  if(p.customEq){ const def = {name:'Your reaction', cat:'Custom', eq:p.customEq, eco:{type:'generic'}}; rx = buildReaction(def,'custom');
+    rx.emit = rx.species.filter(s=>s.side==='p' && ['CO2','SO2','NO2','NO','CO','CH4'].includes(s.f)).map(s=>s.key);
+    if(p.desired) rx.desired = p.desired; }
+  else if(p.sub){ rx = {single:true, species:[parseSpecies(p.sub,'r')], eco:p.eco||{type:'generic'}, emit:[]}; }
+  else rx = getRx(p.rx);
+  const q = p.qText || (p.q? p.q(p) : autoQuestion(p, rx));
+  if(p.type==='ae') return solveAE({...p, qText:q}, rx);
+  return solveReacting({...p, qText:q}, rx);
+}
+
+const TKIND = {mass:'mass', moles:'number of moles', volume:'volume', concentration:'concentration', solutionVolume:'volume', particles:'number of particles', charge:'charge', time:'time'};
+function autoQuestion(p, rx){
+  if(p.type==='ae'){ const d = rx.species[findSp(rx, p.desired||rx.desired)]; return `Calculate the atom economy for making ${d?fH(d):'the product'} in this reaction.`; }
+  const S = rx.species; const sp = k=>S[findSp(rx,k)];
+  const t = p.target, ts = sp(t.sp); if(!ts) return 'Calculate the required quantity.';
+  const gtxt = p.givens.map(g=>{ const s=sp(g.sp); if(!s) return ''; if(g.kind==='charge') return `a current of ${fmt(g.I)} A flows for ${fmt(g.t)} ${ULBL[g.tUnit]}`; return `${qty(g)} of ${fH(s)}${g.kind==='volume'?' gas':''}`; });
+  const isE = p.givens.some(g=>g.kind==='charge');
+  const when = isE? `when ${gtxt[0]}` : p.givens.length===2? `when ${gtxt[0]} reacts with ${gtxt[1]}` : `from ${gtxt[0]}`;
+  const role = ts.side==='p'? 'formed' : 'needed';
+  const pur = p.purity? ` The ${fH(sp(p.givens[0].sp))} is ${p.purity}% pure.` : '';
+  const yl = p.yield? ` The percentage yield is ${p.yield}%.` : '';
+  const c = condInfo(p.cond);
+  if(t.kind==='percentYield') return `In an experiment, ${gtxt.join(' and ')} reacted.${pur} The actual mass of ${fH(ts)} collected was ${fmt(t.actual)} ${ULBL[t.actualUnit]}. Calculate the percentage yield.`;
+  if(t.kind==='purity') return `A ${fmt(t.sample)} ${ULBL[t.sampleUnit]} sample of impure ${fH(ts)} reacted completely, giving ${gtxt[0]}. Calculate the percentage purity of the sample.`;
+  let what = `${TKIND[t.kind]} of ${fH(ts)} ${role}`;
+  if(t.kind==='volume') what += ` (at ${c.short}, in ${ULBL[t.unit]})`;
+  else if(t.kind==='mass') what += ` (in ${ULBL[t.unit]})`;
+  else if(t.kind==='solutionVolume') what = `volume of ${fmt(t.conc)} mol/dm³ ${fH(ts)} ${role} (in ${ULBL[t.unit]})`;
+  else if(t.kind==='concentration') what = `concentration of the ${fH(ts)} solution if ${fmt(t.vol)} ${ULBL[t.volUnit]} of it reacted`;
+  else if(t.kind==='time') what = `time needed at ${fmt(t.I)} A (in ${ULBL[t.unit]})`;
+  const gasNote = p.givens.some(g=>g.kind==='volume') && t.kind!=='volume' ? ` Gas volumes are measured at ${c.short}.` : '';
+  return `Calculate the ${what} ${when}.${pur}${yl}${gasNote}`;
+}
+
+/* ---------- HTML snippets ---------- */
+function lines(arr, cls=''){ return `<div class="calc ${cls}">${arr.map(l=>`<p>${l}</p>`).join('')}</div>`; }
+function answerBox(label, v, unit){ return `<div class="answer-box"><span>${label}</span><strong>${fmt(v)}${unit? (unit==='%'?'%':' '+unit):''}</strong><em>3 significant figures</em></div>`; }
+function answerBoxText(label, txt){ return `<div class="answer-box"><span>${label}</span><strong>${txt}</strong></div>`; }
+
+/* ================================================================
+   ECO LAYER — interpretation computed from the stoichiometry itself
+   ================================================================ */
+const LEAF = '<svg class="leaf" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 19 13 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const ECO_KICKER = {combustion:'Direct greenhouse-gas emissions', thermal:'Process emissions', atomEconomy:'Atom economy and by-products', extraction:'Ore consumption and mining waste',
+  recovery:'Recovering metal from waste', microscale:'Chemical consumption', neutralisation:'Chemical use and wastewater', acidRain:'From a sample to a whole lake', fertiliser:'Nitrogen use and eutrophication',
+  electrolysis:'Electricity and its energy source', precipitation:'Water treatment and solid waste', pollutionControl:'Pollution control trade-off', carbonCapture:'Carbon capture by plants',
+  hydrate:'Hidden water in crystals', gasEmission:'How much space a gas takes', note:'Why this formula matters', generic:'Material flow'};
+function spK(c, key){ const i = findSp(c.rx, key); return i<0? null : {i, s:c.rx.species[i], m: c.masses? c.masses[i] : null}; }
+function metric(label, value, sub=''){ return `<div class="metric"><span>${label}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`; }
+function table(head, rows){ return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`; }
+function perLabel(c){ return c.perEquation? 'per equation (g)' : 'this batch'; }
+
+/* Fuel comparison: energy released per m³ of greenhouse gas (r.t.p.). ΔHc values in kJ/mol (standard data-book values). */
+const FUELS = [
+  {id:'h2green', name:'Hydrogen from renewable electrolysis', rx:'hydrogen', f:'H2', dH:286, zero:true},
+  {id:'h2grey', name:'Hydrogen made from methane', rx:'hydrogen', f:'H2', dH:286, via:'reforming'},
+  {id:'methane', name:'Methane (natural gas)', rx:'methane', f:'CH4', dH:890, leak:true},
+  {id:'propane', name:'Propane (LPG)', rx:'propane', f:'C3H8', dH:2220},
+  {id:'octane', name:'Octane (petrol)', rx:'octane', f:'C8H18', dH:5470},
+  {id:'ethanol', name:'Ethanol (biofuel)', rx:'ethanolburn', f:'C2H5OH', dH:1367, bio:true},
+  {id:'coal', name:'Coal (as carbon)', rx:'coal', f:'C', dH:394},
+];
+const GWP_CH4 = 28; // 100-year global warming potential of methane, IPCC AR5
+function fuelStats(F){
+  const rx = getRx(F.rx); const fu = rx.species[findSp(rx,F.f)];
+  let co2PerMol; // mol CO2 per mol fuel delivered
+  if(F.zero) co2PerMol = 0;
+  else if(F.via){ const r = getRx(F.via); const h = r.species[findSp(r,'H2')], c = r.species[findSp(r,'CO2')]; co2PerMol = c.coef/h.coef; }
+  else { const c = rx.species[findSp(rx,'CO2')]; co2PerMol = c.coef/fu.coef; }
+  const m3 = co2PerMol*0.024;
+  return {...F, M:fu.M, co2PerMol, m3, perM3: m3? F.dH/1000/m3 : Infinity, perKg: F.dH/fu.M};
+}
+function leakAdjusted(F, leakPct){ // methane: unburned leak counted as CO2-equivalent
+  const L = leakPct/100; const leakedPerBurned = L/(1-L); const co2e = F.co2PerMol + leakedPerBurned*(16*GWP_CH4/44);
+  return F.dH/1000/(co2e*0.024);
+}
+function fuelCompare(curF){
+  const rows = FUELS.map(fuelStats);
+  const max = Math.max(...rows.filter(r=>isFinite(r.perM3)).map(r=>r.perM3));
+  const cur = rows.find(r=>r.f===curF && !r.zero && !r.via) || null;
+  const eqOf = r=>{
+    const comb = eqHTML(getRx(r.rx));
+    if(r.zero) return `${eqHTML(buildReaction({eq:'2H2O(l) -> 2H2(g) + O2(g)'}))} <em>(electrolysis, wind or solar power)</em><br>${comb}`;
+    if(r.via) return `${eqHTML(getRx(r.via))} <em>(steam reforming)</em><br>${comb}`;
+    return comb; };
+  const row = r=>`<div class="frow2${cur && r.id===cur.id?' me':''}" data-fuel="${r.id}"><div class="fname"><span>${r.name}${r.bio?' *':''}</span><span class="feq">${eqOf(r)}</span><span class="fdh">ΔH<sub>c</sub> = −${r.dH} kJ/mol of ${fH(r.f)} · ${r.zero? 'no CO₂' : `${fmt(r.co2PerMol)} mol CO₂ per mol ${fH(r.f)}`}</span></div><i style="--w:${isFinite(r.perM3)? r.perM3/max*100 : 100}%" class="${isFinite(r.perM3)?'':'inf'}"></i><b data-val>${isFinite(r.perM3)? fmt(r.perM3)+' MJ' : 'no CO₂'}</b></div>`;
+  const work = cur? `<p class="note">How the ${cur.name.split(' (')[0].toLowerCase()} figure is worked out: burning 1 mol releases ${fmt(cur.dH,4)} kJ and ${fmt(cur.co2PerMol)} mol CO₂ = ${fmt(cur.m3)} m³ at r.t.p., so ${fmt(cur.dH/1000,4)} MJ ÷ ${fmt(cur.m3)} m³ = <b>${fmt(cur.perM3)} MJ per m³ of CO₂</b>.</p>` : '';
+  const h2 = rows.find(r=>r.id==='h2grey');
+  return `<div class="fuels"><p class="cap">Beyond the textbook: energy released per m³ of CO₂ produced (higher is better for the climate). Use each equation to check a figure yourself: MJ per mol ÷ (mol CO₂ × 0.024 m³).</p>
+    ${rows.map(row).join('')}
+    ${work}
+    <label class="slider"><span>Methane leaked before it reaches the burner: <b data-leak-out>0</b>%</span><input type="range" min="0" max="10" step="0.5" value="0" data-leak data-dh="890" data-max="${max}"></label>
+    <p class="note">Leaked methane is counted as CO₂-equivalent (1 kg CH₄ ≈ ${GWP_CH4} kg CO₂ over 100 years, IPCC). Hydrogen from methane uses CH₄ + 2H₂O → CO₂ + 4H₂, so 1 mol CO₂ comes with 4 mol H₂ (${fmt(h2.perM3)} MJ per m³, before counting the energy the process needs). * Ethanol's carbon was absorbed by crops as they grew.</p></div>`;
+}
+const ECO = {
+  combustion(c){
+    const fuel = spK(c, c.eco.fuel), co2 = spK(c,'CO2'), o2 = spK(c,'O2');
+    if(!co2) return {metrics:[metric('CO₂ released','0'), metric('Fuel burned', fm(fuel.m)), metric('O₂ taken from air', fm(o2.m))],
+      text:'Hydrogen contains no carbon, so burning it makes only water. There are no CO₂ emissions where it is burned. Its real climate impact depends on how the hydrogen was made: from methane (which releases CO₂) or by electrolysis of water powered by renewable electricity. Level 7 calculates the second route.',
+      extra: fuelCompare('H2'),
+      think:'Hydrogen made from methane still releases CO₂, just at the factory instead of the exhaust. Compare its bar with methane burned directly. When is hydrogen genuinely the better choice?'};
+    const ratio = co2.m/fuel.m, pc = pctEl(fuel.s,'C');
+    const F = FUELS.find(x=>x.f===fuel.s.f && !x.zero && !x.via); const nFuel = c.xi*fuel.s.coef; const E = F? nFuel*F.dH : null;
+    return {metrics:[metric('CO₂ released', fm(co2.m), `${fmt(c.xi*co2.s.coef*0.024)} m³ at r.t.p.`), E? metric('Energy released', fmt(E/1000)+' MJ', `${fmt(nFuel)} mol × ${fmt(F.dH,4)} kJ/mol`) : metric('CO₂ per kg of fuel', fmt(ratio)+' kg')],
+      extra: fuelCompare(fuel.s.f),
+      text:`Every carbon atom in ${fH(fuel.s)} ends up in a CO₂ molecule. Carbon is ${fmt(pc)}% of the fuel's mass, and each 12 g of carbon becomes 44 g of CO₂ by picking up oxygen from the air. That is why burning this fuel releases ${fmt(ratio)} times its own mass of CO₂.`+
+        (c.eco.bio? ' The carbon in bio-ethanol came from CO₂ that crops absorbed by photosynthesis, so the cycle can be close to carbon-neutral. Growing, fermenting and distilling still use energy, so it is never exactly zero.' : ''),
+      think:'Methane gives the most energy per m³ of CO₂ of the fossil fuels, so switching coal power stations to gas cuts emissions. Drag the leak slider: at what leak rate does gas lose its advantage over petrol? What would you check before calling a fuel "clean"?'};
+  },
+  thermal(c){
+    const gas = spK(c, c.eco.gas); const solid = c.rx.desired? spK(c, c.rx.desired) : null;
+    const n = c.xi*gas.s.coef;
+    return {metrics:[metric(`${fH(gas.s)} released`, fm(gas.m)), metric('Volume at r.t.p.', fmt(n*24/1000)+' m³'), solid? metric(`${fH(solid.s)} produced`, fm(solid.m)) : ''],
+      text:`This ${fH(gas.s)} comes from the carbonate itself, not from burning a fuel. Even a kiln heated entirely by renewable electricity would still release it. These are called process emissions, and they are a major reason cement and lime works are testing carbon capture.`,
+      think:'A kiln heated by burning methane releases CO₂ from two sources. Name both. Which one could switching to renewable heating remove?'};
+  },
+  atomEconomy(c){
+    const d = spK(c, c.rx.desired); const ae = aeOf(c.rx, c.rx.desired);
+    const reactM = c.rx.species.reduce((a,s,i)=> a + (s.side==='r' && !s.e ? c.masses[i] : 0), 0);
+    const by = c.rx.species.filter(s=>s.side==='p' && s.key!==c.rx.desired);
+    const waste = reactM*(1-ae/100);
+    let cmp = '', cmpTxt = '';
+    if(c.eco.compare){ const o = getRx(c.eco.compare); const ae2 = aeOf(o, o.desired); cmp = metric('Compare: '+o.name.replace('Ethanol by ',''), fmt(ae2)+'%', 'atom economy'); cmpTxt = ` For comparison, ${o.name.toLowerCase()} has an atom economy of ${fmt(ae2)}%.`; }
+    const full = ae>99.9;
+    return {metrics:[metric('Atom economy', fmt(ae)+'%'), metric(`By-product mass (${perLabel(c)})`, full? '0' : fm(waste)), cmp],
+      text: full? `All of the reactant atoms end up in ${fH(d.s)}. A 100% atom economy reaction makes no by-product. Waste can still come from reactants that never react (a yield below 100%) and from making the reactants in the first place.${c.rx.rev?' This reaction is reversible, so unreacted gases are separated and recycled back into the reactor rather than thrown away.':''}${cmpTxt}`
+        : `Only ${fmt(ae)}% of the reactant mass ends up in ${fH(d.s)}. The rest leaves as ${by.map(s=>fH(s)).join(' and ')}. Unless someone can use it, that is waste.${cmpTxt}`,
+      think: c.eco.compare? 'Hydration of ethene has the higher atom economy, but ethene comes from crude oil and glucose comes from crops. Which route is greener overall? Give one point for each side.' : 'Is a reaction with a high atom economy automatically "green"? What else would you want to know?'};
+  },
+  extraction(c){
+    const comp = spK(c, c.eco.compound), met = spK(c, c.eco.metal); const co2 = spK(c,'CO2');
+    const grade = c.p.purity || c.eco.grade;
+    const ore = comp.m/(grade/100), waste = ore - met.m;
+    return {metrics:[metric(`${fH(met.s)} produced`, fm(met.m)), `<div class="metric"><span>Ore mined</span><b data-ore-out>${fm(ore)}</b><small>at <span data-grade-out>${grade}</span>% ${fH(comp.s)}</small></div>`, `<div class="metric"><span>Waste rock and removed elements</span><b data-waste-out>${fm(waste)}</b></div>`, co2? metric('CO₂ released', fm(co2.m)) : ''],
+      extra:`<label class="slider">Ore grade (% ${fH(comp.s)} in the rock) <input type="range" min="5" max="100" step="5" value="${grade}" data-ore data-comp="${comp.m}" data-metal="${met.m}"></label>`,
+      text:`The metal is only part of what is dug up. ${co2? `The oxygen in ${fH(comp.s)} is removed and leaves as CO₂, and`: `The oxygen in ${fH(comp.s)} is removed, and`} every bit of rock that is not ${fH(comp.s)} becomes tailings (mining waste). Drag the slider: the lower the ore grade, the more rock must be mined, crushed and dumped for the same mass of ${fH(met.s)}.`,
+      think:'Recycling scrap metal skips mining and reduction completely. Which numbers on this card would recycling reduce?'};
+  },
+  recovery(c){
+    const met = spK(c, c.eco.metal), sac = spK(c, c.eco.sacrificial), left = spK(c, c.eco.left);
+    return {metrics:[metric(`${fH(met.s)} recovered`, fm(met.m)), metric(`${fH(sac.s)} used up`, fm(sac.m)), metric(`${fH(left.s)} left in solution`, fm(left.m))],
+      text:`Scrap iron is more reactive than copper, so it displaces copper from waste solutions. A cheap, plentiful metal is swapped for a more valuable one, and the copper ions no longer pollute the water. The iron does not vanish: it ends up as dissolved ${fH(left.s)}, which still needs treating.`,
+      think:'Magnesium is even more reactive than iron. Why do recycling plants still use scrap iron?'};
+  },
+  microscale(c){
+    const r = spK(c, c.eco.reagent); const n = c.xi*r.s.coef;
+    return {metrics:[metric(`${fH(r.s)} used (one run)`, fmt(n)+' mol', fm(r.m)), metric(`${fH(r.s)} used (class of 30)`, fmt(n*30)+' mol', fm(r.m*30))],
+      text:`Small experiments still use and waste chemicals. One run consumes ${fmt(n)} mol of ${fH(r.s)}. Across a class of 30, that is ${fm(r.m*30)} of acid that has to be bought, diluted and neutralised afterwards. Microscale chemistry shrinks experiments so that less is used and less waste is made, while the stoichiometry stays the same.`,
+      think:'If you halve the mass of magnesium, what happens to the volume of hydrogen and the acid used? Check it in the Reaction Lab.'};
+  },
+  neutralisation(c){
+    const base = spK(c, c.eco.base), salt = spK(c, c.eco.salt), acid = spK(c, c.eco.acid);
+    const caps = [['NaOH',1],['Ca(OH)2',2],['CaCO3',2]].map(([f,k])=>{ const s=parseSpecies(f,'r'); const per = k/s.M*1000; return [fH(s), fmt(per)+' mol', fmt(1000/per)+' kg']; });
+    const solid = salt.s.state==='s';
+    return {metrics:[metric(`${fH(base.s)} consumed`, fm(base.m)), metric(`${fH(acid.s)} neutralised`, fm(acid.m)), metric(`${fH(salt.s)} formed`, fm(salt.m))],
+      extra: table(['Base','H⁺ neutralised per kg','kg needed for 1000 mol H⁺'], caps),
+      text:`Neutralising acid waste uses up ${fm(base.m)} of ${fH(base.s)}. The acid is not destroyed: it becomes ${fH(salt.s)}${solid?', which settles out as a solid sludge':', which stays dissolved in the water'}. Treating the water creates a new product that must be dealt with. The table uses M<sub>r</sub> values to compare how much acid each base can neutralise per kilogram.`,
+      think:'Which base neutralises the most acid per kg? Why might a treatment works still choose a different one? Think about cost, safety and what happens to the salt.'};
+  },
+  acidRain(c){
+    const acidSp = c.rx.single? c.rx.species[0] : spK(c, c.eco.acid).s;
+    const conc = c.t.kind==='concentration'? c.fin.value : null;
+    if(conc===null) return ECO.generic(c);
+    const lake = 1e9; const n = conc*lake; const hPer = acidSp.counts.H||1; const limeMol = n*hPer/2;
+    return {metrics:[metric('Acid concentration', fmt(conc)+' mol/dm³'), metric(`${fH(acidSp)} in the lake`, fm(n*acidSp.M)), metric('Ca(OH)₂ needed to neutralise', fm(limeMol*74))],
+      text:`A tiny concentration matters when it is spread through a whole lake. Imagine a lake of 1 km² and 1 m deep (1.0 × 10⁹ dm³) at this concentration: n = c × V gives ${fmt(n)} mol, or ${fm(n*acidSp.M)} of ${fH(acidSp)}. Water managers add lime to neutralise acidified lakes. With the same mole-ratio method, that needs ${fm(limeMol*74)} of Ca(OH)₂.`,
+      think:'Where does the sulfuric acid in rain come from? Trace it back step by step to a fuel being burned.'};
+  },
+  fertiliser(c){
+    const d = spK(c, c.rx.desired); const pN = pctEl(d.s,'N'); const N = d.m*pN/100;
+    const list = ['NH4NO3','CO(NH2)2','(NH4)2SO4','NH4Cl'].map(f=>parseSpecies(f,'p'));
+    const rows = list.map(s=>{ const pc = pctEl(s,'N'); return [fH(s)+(s.f===d.s.f?' ◂':''), fmt(pc)+'%', fmt(100/(pc/100))+' kg']; });
+    return {metrics:[metric(`${fH(d.s)} produced`, fm(d.m)), metric('Nitrogen by mass', fmt(pN)+'%'), metric('Nitrogen delivered', fm(N))],
+      extra: table(['Fertiliser','% N by mass','Mass for 100 kg of N'], rows),
+      text:`This batch delivers ${fm(N)} of nitrogen, the nutrient crops use to build proteins. Plants only take up part of what is spread. Excess nitrate dissolves in rainwater, runs into rivers and feeds algae, which leads to eutrophication. Working out the right mass of fertiliser from %N is stoichiometry on a farm.`,
+      think:'A field needs 100 kg of nitrogen. Which fertiliser in the table means the least mass to transport and spread? What else would a farmer consider?'};
+  },
+  electrolysis(c){
+    const e = spK(c,'e-'); const nE = c.xi*e.s.coef; const Q = nE*FARADAY; const V = c.eco.voltage; const J = Q*V; const kWh = J/3.6e6;
+    const prod = spK(c, c.eco.product); const perKg = kWh/(prod.m/1000);
+    const src = [['Coal',820],['Natural gas',490],['Solar PV',48],['Hydroelectric',24],['Nuclear',12],['Wind (onshore)',11]];
+    const max = kWh*820/1000;
+    const bars = src.map(([nm,gpk])=>{ const kg = kWh*gpk/1000; return `<div class="sbar"><span>${nm}</span><i style="--w:${Math.max(0.6,kg/max*100)}%"></i><b>${fm(kg*1000)}</b></div>`; }).join('');
+    const notes = {Al:' Recycling aluminium skips this electrolysis step completely.', H2:' Hydrogen made with renewable electricity is called green hydrogen.', Cu:' Copper refining runs at a low voltage, so it needs far less energy per kg than aluminium smelting.'};
+    const thinks = {Al:'Why are many aluminium smelters built next to hydroelectric power stations?', H2:'Compare the CO₂ from making this hydrogen with coal power against wind power. Is hydrogen automatically "zero-carbon"?', Cu:'Why is it worth refining copper to very high purity for electrical wiring?'};
+    return {metrics:[metric('Charge passed', fmt(Q)+' C'), metric(`Energy at ${V} V`, fmt(kWh)+' kWh', `E = Q × V = ${fmt(J)} J`), metric(`Energy per kg of ${fH(prod.s)}`, fmt(perKg)+' kWh')],
+      extra:`<div class="sources"><p class="cap">CO₂ from generating this electricity (life-cycle medians, IPCC 2014, g CO₂-eq per kWh: coal 820, gas 490, solar 48, hydro 24, nuclear 12, wind 11)</p>${bars}</div>`,
+      text:`Electrolysis is driven by electricity. The stoichiometry fixes the charge needed (${fmt(Q)} C), and the cell voltage turns that charge into energy (E = Q × V). The carbon footprint of the product depends almost entirely on how that electricity is generated.${notes[prod.s.f]||''}`,
+      think: thinks[prod.s.f] || 'How would the CO₂ footprint change if the plant switched from coal to wind power?'};
+  },
+  precipitation(c){
+    const solid = spK(c, c.eco.solid); const nS = c.xi*solid.s.coef; const ionM = nS*(solid.s.counts[c.eco.ion]||1)*AR[c.eco.ion];
+    const solG = c.G && c.G.find(g=>g.kind==='solution'); const Vw = solG? solG.vol*UNIT.vol[solG.volUnit] : null;
+    return {metrics:[metric(`${c.eco.ion} removed from the water`, fm(ionM), Vw? `from ${fmt(Vw)} dm³ (${fmt(ionM*1000/Vw)} mg/dm³ before)`:'' ), metric(`Solid ${fH(solid.s)} formed`, fm(solid.m))],
+      text: c.eco.valuable? `Silver is valuable, so precipitating it as insoluble ${fH(solid.s)} lets a waste stream become a resource. The ${fm(solid.m)} of precipitate is filtered off and the silver recovered, and the water no longer carries dissolved silver ions, which are toxic to aquatic life.`
+        : `Precipitation turns dissolved ${c.eco.ion}²⁺ ions, which are toxic to aquatic life, into an insoluble solid that can be filtered out. The water is cleaner, but you now have ${fm(solid.m)} of ${fH(solid.s)} sludge that must be landfilled or sent for metal recovery.`,
+      think:'Should the sludge go to landfill, or should the metal be recovered from it? What would you need to know to decide?'};
+  },
+  pollutionControl(c){
+    const pol = spK(c, c.eco.pollutant), reag = spK(c, c.eco.reagent), rel = spK(c, c.eco.released), sol = spK(c, c.eco.solid);
+    return {metrics:[metric(`${fH(pol.s)} captured`, fm(pol.m)), metric(`${fH(reag.s)} used`, fm(reag.m)), metric(`${fH(rel.s)} released`, fm(rel.m)), metric(`Solid ${fH(sol.s)}`, fm(sol.m))],
+      text:`The scrubber stops ${fm(pol.m)} of SO₂ reaching the air, where it would form acid rain. The chemistry has a cost: it uses ${fm(reag.m)} of limestone that must be quarried, and it releases ${fm(rel.m)} of CO₂. The calcium sulfite is usually oxidised to calcium sulfate (gypsum) and sold to make plasterboard.`,
+      think:'The scrubber swaps one pollutant for another. Why is that swap still worth making?'};
+  },
+  carbonCapture(c){
+    const co2 = spK(c,'CO2'), glu = spK(c,'C6H12O6'), o2 = spK(c,'O2');
+    const oct = getRx('octane'); const co2PerKgOct = (16*44)/(2*114.0);
+    const octEq = co2.m/co2PerKgOct;
+    return {metrics:[metric('CO₂ absorbed', fm(co2.m)), metric('Glucose made', fm(glu.m)), metric('O₂ released', fm(o2.m))],
+      text:`Photosynthesis is combustion run backwards: 6 mol of CO₂ are locked into every mole of glucose. This is the CO₂ released by burning about ${fm(octEq)} of octane (petrol), using the ${fmt(co2PerKgOct)} kg of CO₂ per kg of octane from the combustion equation. The carbon stays stored only while the wood and leaves are not burned or left to rot.`,
+      think:'A car burns 1000 kg of petrol a year. Roughly how many trees like this would it take to absorb its CO₂? What does that tell you about tree-planting as a climate solution?'};
+  },
+  hydrate(c){
+    const h = parseSpecies(c.eco.hydrate,'r'); const x = h.counts.H? (c.eco.hydrate.split('.')[1]||'').match(/^(\d+)/) : null; const nx = x? +x[1] : 1;
+    const w = nx*18/h.M*100;
+    return {metrics:[metric('Water by mass in the crystal', fmt(w)+'%'), metric('Water in 1 tonne of crystals', fmt(w*10)+' kg')],
+      text:`${fmt(w)}% of the mass of ${fH(h)} is water of crystallisation. Every tonne shipped carries ${fmt(w*10)} kg of water. Heating drives it off, but heating costs energy. Manufacturers choose the hydrated or anhydrous form by weighing transport mass against the energy needed to dry it.`,
+      think:'Washing soda is sold as the hydrated crystal. Would it be better for the environment to sell the anhydrous powder instead? What would you need to compare?'};
+  },
+  gasEmission(c){
+    const s = c.rx.species[0]; const n = c.G[0].n; const m = n*s.M; const V = n*24/1000;
+    const cmp = (s.f==='CO2'||s.f==='CH4')? fuelCompare(s.f==='CH4'?'CH4':null) : '';
+    return {extra:cmp, metrics:[metric(`Mass of ${fH(s)}`, fm(m)), metric('Moles', fmt(n)+' mol'), metric('Volume at r.t.p.', fmt(V)+' m³', `≈ ${fmt(V/240)} classrooms (10 × 8 × 3 m)`)],
+      text:`Mass hides how much space a gas takes up. ${fm(m)} of ${fH(s)} spreads out to ${fmt(V)} m³ at room temperature and pressure, because every mole of any gas occupies 24 dm³.`+
+        (s.f==='CH4'? ' Methane that leaks without being burned is a far stronger greenhouse gas per molecule than the CO₂ it would form if burned, so leaks matter even when the mass sounds small.' : ''),
+      think: s.f==='CH4'? 'Burning 1 mol of methane makes 1 mol of CO₂. Why might burning leaked methane be better for the climate than letting it escape?' : `Why are emissions of ${fH(s)} usually reported in tonnes rather than in cubic metres?`};
+  },
+  note(c){
+    const sp = c.formulaSp || c.tsp; const comp = sp.order.map(el=>{ const pc = pctEl(sp,el); return `<div class="sbar"><span>${el}</span><i style="--w:${pc}%"></i><b>${fmt(pc)}%</b></div>`; }).join('');
+    return {metrics:[metric('Formula found', fStr(sp.f)), metric('M<sub>r</sub>', fmtMr(sp.M))], extra:`<div class="sources"><p class="cap">Composition by mass, calculated from the formula</p>${comp}</div>`,
+      text:c.eco.text||'', think:c.eco.think||'', kicker:c.eco.kicker};
+  },
+  generic(c){
+    if(!c.masses) return {metrics:[], text:'Every stoichiometry answer describes real material: what is used up, what is made, and what is left behind.', think:'Where would the products of this reaction end up in the real world?'};
+    const inM = c.rx.species.reduce((a,s,i)=>a+(s.side==='r'&&!s.e?c.masses[i]:0),0), outM = c.rx.species.reduce((a,s,i)=>a+(s.side==='p'&&!s.e?c.masses[i]:0),0);
+    const prodKey = c.rx.desired || (c.tsp && c.tsp.side==='p'? c.tsp.key : null);
+    const ae = prodKey? aeOf(c.rx, prodKey) : null;
+    const em = c.rx.emit.map(k=>spK(c,k)).filter(Boolean);
+    return {metrics:[metric('Reactants used', fm(inM)), metric('Products formed', fm(outM)), ae!==null? metric(`Atom economy for ${fH(c.rx.species[findSp(c.rx,prodKey)])}`, fmt(ae)+'%') : '', ...em.map(e=>metric(`${fH(e.s)} released`, fm(e.m)))],
+      text:`Mass is conserved: ${fm(inM)} of reactants become ${fm(outM)} of products. ${ae!==null? `If ${fH(c.rx.species[findSp(c.rx,prodKey)])} is the product you want, ${fmt(ae)}% of the reactant mass ends up in it and the rest is by-product.`:''}${em.length? ` ${em.map(e=>fH(e.s)).join(' and ')} leave${em.length>1?'':'s'} as gas emissions.`:''}`,
+      think:'Which product here is useful, and which would count as waste? Could the by-product be used for something?'};
+  }
+};
+
+function massBalance(c){
+  if(!c.masses || c.rx.species.some(s=>s.e)) return '';
+  const desired = c.rx.desired, emit = c.rx.emit||[];
+  const ins = [], outs = [];
+  let ri = 0;
+  c.rx.species.forEach((s,i)=>{ const m = c.masses[i]; if(!(m>0)) return;
+    if(s.side==='r') ins.push({lab:fH(s), m, cls:'in'+(ri++%3)});
+    else outs.push({lab:fH(s), m, cls: s.key===desired? 'want' : emit.includes(s.key)? 'emit' : 'by'}); });
+  if(c.excess && c.excess.g>0){ const s = c.rx.species[c.excess.i]; ins.push({lab:fH(s)+' excess', m:c.excess.g, cls:'xs'}); outs.push({lab:fH(s)+' unreacted', m:c.excess.g, cls:'xs'}); }
+  const tot = ins.reduce((a,x)=>a+x.m,0);
+  const bar = arr => `<div class="mbar">${arr.map(x=>`<i class="${x.cls}" style="flex-grow:${x.m/tot}" title="${x.lab.replace(/<[^>]+>/g,'')}: ${fm(x.m)}">${x.m/tot>0.14?`<span>${x.lab}</span>`:''}</i>`).join('')}</div>`;
+  const leg = arr => `<ul class="mleg">${arr.map(x=>`<li><i class="${x.cls}"></i>${x.lab} <b>${fm(x.m)}</b></li>`).join('')}</ul>`;
+  const keyNote = [desired? '<li><i class="want"></i>useful product</li>':'', emit.length? '<li><i class="emit"></i>emission</li>':'', '<li><i class="by"></i>by-product</li>'].join('');
+  return `<details class="mb"><summary>Mass balance: mass in = mass out</summary>
+    <div class="mrow"><span class="mlab">In</span>${bar(ins)}</div>${leg(ins)}
+    <div class="mrow"><span class="mlab">Out</span>${bar(outs)}</div>${leg(outs)}
+    <ul class="mleg key">${keyNote}</ul></details>`;
+}
+function yieldBlock(c){
+  if(!c.p || !c.t) return '';
+  let Y = null, theo = null, act = null, unit = c.unitTxt;
+  if(c.t.kind==='percentYield'){ Y = c.fin.value; theo = c.fin.theo; act = c.fin.act; unit='g'; }
+  else if(c.p.yield && c.fin.theo!==undefined){ Y = c.p.yield; theo = c.fin.theo; act = c.fin.value; }
+  if(Y===null) return '';
+  const lost = theo-act;
+  return `<div class="yield"><p class="cap">Yield: material efficiency</p>
+    <div class="ybar"><i style="width:${Math.min(100,Y)}%"></i></div>
+    <p>Theoretical ${fmt(theo)} ${unit} · actual ${fmt(act)} ${unit} · <b>never collected: ${fmt(lost)} ${unit}</b></p>
+    <p>A ${fmt(Y)}% yield means ${fmt(100-Y)}% of the possible product was lost. Those reactants were still bought, heated and processed, so a low yield wastes materials and energy even when the atom economy is high.${c.rx && c.rx.rev? ' In a reversible industrial process, unreacted gases are recycled, so the overall conversion ends up much higher than one pass.':''}</p></div>`;
+}
+function ecoBody(c){
+  const type = (c.eco && c.eco.type) || 'generic';
+  const e = (ECO[type]||ECO.generic)(c);
+  const kicker = e.kicker || ECO_KICKER[type] || 'Eco connection';
+  const res = c.fin && c.fin.text? fStr(c.fin.text) : c.fin? `${fmt(c.fin.value)}${c.unitTxt? (c.unitTxt==='%'?'%':' '+c.unitTxt):''}` : '';
+  return `<p class="eco-kicker">${LEAF}<span>${kicker}</span></p>
+    ${res? `<p class="eco-result">Stoichiometry result: <b>${res}</b></p>`:''}
+    ${e.metrics && e.metrics.filter(Boolean).length? `<div class="metrics">${e.metrics.filter(Boolean).join('')}</div>`:''}
+    ${e.text? `<p class="eco-text">${e.text}</p>`:''}
+    ${e.extra||''}
+    ${yieldBlock(c)}
+    ${massBalance(c)}
+    ${e.think? `<div class="think"><span>Think and discuss</span><p>${e.think}</p></div>`:''}`;
+}
+
+/* ================================================================
+   PROBLEM BANK — the learning path
+   ================================================================ */
+const gv = {
+  m:(sp,value,unit='g')=>({sp,kind:'mass',value,unit}),
+  v:(sp,value,unit='dm3')=>({sp,kind:'volume',value,unit}),
+  s:(sp,conc,vol,volUnit='cm3')=>({sp,kind:'solution',conc,vol,volUnit}),
+  i:(I,t,tUnit='s')=>({sp:'e-',kind:'charge',I,t,tUnit}),
+};
+const tg = {
+  m:(sp,unit='g')=>({sp,kind:'mass',unit}),
+  n:(sp)=>({sp,kind:'moles',unit:'mol'}),
+  v:(sp,unit='dm3')=>({sp,kind:'volume',unit}),
+  c:(sp,vol,volUnit='cm3')=>({sp,kind:'concentration',vol,volUnit}),
+  sv:(sp,conc,unit='cm3')=>({sp,kind:'solutionVolume',conc,unit}),
+  y:(sp,actual,actualUnit='g')=>({sp,kind:'percentYield',actual,actualUnit}),
+  p:(sp,sample,sampleUnit='g')=>({sp,kind:'purity',sample,sampleUnit}),
+};
+const LEVELS = [
+  {n:1, name:'Moles and M<sub>r</sub>', goal:'Convert between mass, moles, gas volume and concentration for one substance.'},
+  {n:2, name:'Reacting masses', goal:'Use the mole ratio from a balanced equation.'},
+  {n:3, name:'Gases and solutions', goal:'Gas volumes and titrations follow the same pattern.'},
+  {n:4, name:'Limiting and excess', goal:'Find which reactant runs out first.'},
+  {n:5, name:'Yield, purity, atom economy', goal:'Measure how efficiently a reaction uses materials.'},
+  {n:6, name:'Finding formulae', goal:'Empirical, molecular and hydrated-salt formulae.'},
+  {n:7, name:'Industry and electrolysis', goal:'Charge, energy and large-scale processes.'},
+];
+const Q0 = p=>qty(p.givens[0]);
+const BANK = [
+  {id:'1.1',level:1,title:'A car journey in moles',sub:'CO2(g)',givens:[gv.m('CO2',4.4,'kg')],target:tg.n('CO2'),eco:{type:'gasEmission'},
+    q:p=>`A car releases ${Q0(p)} of carbon dioxide on a short journey. How many moles of CO₂ is this?`},
+  {id:'1.2',level:1,title:'A leaking gas main',sub:'CH4(g)',givens:[gv.m('CH4',8,'kg')],target:tg.v('CH4','m3'),eco:{type:'gasEmission'},
+    q:p=>`A gas main leaks ${Q0(p)} of methane, CH₄. What volume of methane escapes, measured at r.t.p.? Give your answer in m³.`},
+  {id:'1.3',level:1,title:'Acid in rainwater',sub:'H2SO4(aq)',givens:[gv.m('H2SO4',0.049)],target:tg.c('H2SO4',1,'dm3'),eco:{type:'acidRain',acid:'H2SO4'},
+    q:p=>`A ${fmt(p.target.vol)} ${ULBL[p.target.volUnit]} sample of rainwater contains ${Q0(p)} of sulfuric acid, H₂SO₄. Calculate the concentration of the acid in mol/dm³.`},
+  {id:'2.1',level:2,title:'Lime kiln',rx:'limestone',givens:[gv.m('CaCO3',1000,'kg')],target:tg.m('CO2','kg'),
+    q:p=>`A lime kiln heats ${Q0(p)} of pure calcium carbonate until it has fully decomposed. Calculate the mass of carbon dioxide released, in kg.`},
+  {id:'2.2',level:2,title:'A kilogram of petrol',rx:'octane',givens:[gv.m('C8H18',1,'kg')],target:tg.m('CO2','kg'),
+    q:p=>`Petrol is mainly octane, C₈H₁₈. Calculate the mass of carbon dioxide formed when ${Q0(p)} of octane burns completely, in kg.`},
+  {id:'2.3',level:2,title:'Iron from haematite',rx:'blast',givens:[gv.m('Fe2O3',1,'t')],target:tg.m('Fe','t'),
+    q:p=>`In the blast furnace, carbon monoxide reduces iron(III) oxide. What mass of iron, in tonnes, can be made from ${Q0(p)} of Fe₂O₃?`},
+  {id:'2.4',level:2,title:'Fermenting sugar',rx:'ferment',givens:[gv.m('C6H12O6',900)],target:tg.m('C2H5OH'),
+    q:p=>`Yeast ferments ${Q0(p)} of glucose. Calculate the maximum mass of ethanol that can be produced, in g.`},
+  {id:'2.5',level:2,title:'One tree, one year',rx:'photo',givens:[gv.m('CO2',20,'kg')],target:tg.m('C6H12O6','kg'),
+    q:p=>`A young tree absorbs ${Q0(p)} of carbon dioxide in a year. What mass of glucose can it make from this CO₂ by photosynthesis, in kg?`},
+  {id:'3.1',level:3,title:'Collecting hydrogen',rx:'mghcl',givens:[gv.m('Mg',0.48)],target:tg.v('H2','cm3'),
+    q:p=>`${Q0(p)} of magnesium ribbon reacts with excess hydrochloric acid. What volume of hydrogen is collected at r.t.p., in cm³?`},
+  {id:'3.2',level:3,title:'Titrating acid rain',rx:'h2so4naoh',givens:[gv.s('NaOH',0.01,12.5)],target:tg.c('H2SO4',25),
+    q:p=>`A ${fmt(p.target.vol)} ${ULBL[p.target.volUnit]} sample of acid rain (sulfuric acid) is titrated. It needs ${Q0(p)} sodium hydroxide to neutralise it. Calculate the concentration of sulfuric acid in the rain.`},
+  {id:'3.3',level:3,title:'Gas cooker emissions',rx:'methane',givens:[gv.v('CH4',240,'dm3')],target:tg.m('CO2'),
+    q:p=>`A gas cooker burns ${Q0(p)} of methane, measured at r.t.p. What mass of carbon dioxide is produced, in g?`},
+  {id:'3.4',level:3,title:'Neutralising a spill',rx:'naohhcl',givens:[gv.s('HCl',0.2,50)],target:tg.sv('NaOH',0.1,'cm3'),
+    q:p=>`A lab spill contains ${Q0(p)} hydrochloric acid. What volume of ${fmt(p.target.conc)} mol/dm³ sodium hydroxide is needed to neutralise it exactly, in cm³?`},
+  {id:'3.5',level:3,title:'Hot kiln gas',rx:'limestone',givens:[gv.m('CaCO3',100)],target:tg.v('CO2','dm3'),cond:{type:'custom',T:1173,p:101},ext:true,
+    q:p=>`${Q0(p)} of calcium carbonate decomposes in a kiln. What volume does the CO₂ occupy inside the kiln at ${fmt(p.cond.T)} K and ${fmt(p.cond.p)} kPa, in dm³? (Extended: use pV = nRT.)`},
+  {id:'4.1',level:4,title:'Ammonia reactor',rx:'haber',givens:[gv.m('N2',28,'kg'),gv.m('H2',8,'kg')],target:tg.m('NH3','kg'),
+    q:p=>`A reactor is filled with ${qty(p.givens[0])} of nitrogen and ${qty(p.givens[1])} of hydrogen. Assuming complete reaction, what mass of ammonia forms, in kg?`},
+  {id:'4.2',level:4,title:'Liming acid waste',rx:'lime',givens:[gv.m('Ca(OH)2',1,'kg'),gv.s('H2SO4',0.02,500,'dm3')],target:tg.m('CaSO4','kg'),
+    q:p=>`A factory treats ${qty(p.givens[1])} sulfuric acid waste with ${qty(p.givens[0])} of slaked lime, Ca(OH)₂. What mass of calcium sulfate forms, in kg?`},
+  {id:'4.3',level:4,title:'Copper from waste',rx:'displace',givens:[gv.m('Fe',5.6),gv.s('CuSO4',0.25,200)],target:tg.m('Cu'),
+    q:p=>`${qty(p.givens[0])} of iron filings is added to ${qty(p.givens[1])} copper(II) sulfate waste solution. What mass of copper is recovered, in g?`},
+  {id:'5.1',level:5,title:'Impure limestone',rx:'limestone',givens:[gv.m('CaCO3',500,'kg')],purity:85,target:tg.m('CO2','kg'),
+    q:p=>`A quarry supplies ${Q0(p)} of limestone that is ${p.purity}% calcium carbonate by mass. What mass of CO₂ is released when it is fully decomposed, in kg?`},
+  {id:'5.2',level:5,title:'Ammonia yield',rx:'haber',givens:[gv.m('N2',14,'kg')],target:tg.y('NH3',2.55,'kg'),
+    q:p=>`${Q0(p)} of nitrogen reacts with excess hydrogen in one pass through a reactor. Only ${fmt(p.target.actual)} ${ULBL[p.target.actualUnit]} of ammonia is collected. Calculate the percentage yield.`},
+  {id:'5.3',level:5,title:'Testing a quarry sample',rx:'limestone',givens:[gv.v('CO2',0.396,'dm3')],target:tg.p('CaCO3',2),
+    q:p=>`A ${fmt(p.target.sample)} g sample of quarried limestone is heated strongly and gives off ${Q0(p)} of CO₂ at r.t.p. Calculate the percentage purity of calcium carbonate in the sample.`},
+  {id:'5.4',level:5,title:'Bioethanol yield',rx:'ferment',givens:[gv.m('C6H12O6',1.8,'kg')],yield:85,target:tg.m('C2H5OH','kg'),
+    q:p=>`A bioethanol plant ferments ${Q0(p)} of glucose. The process has a ${p.yield}% yield. What mass of ethanol is actually produced, in kg?`},
+  {id:'5.5',level:5,title:'Two routes to ethanol',type:'ae',rx:'ferment',
+    q:()=>`Ethanol can be made by fermenting glucose. Calculate the atom economy for making ethanol by this route.`},
+  {id:'5.6',level:5,title:'Atom economy of iron',type:'ae',rx:'blast',
+    q:()=>`Calculate the atom economy for producing iron in the blast furnace reaction.`},
+  {id:'6.1',level:6,title:'Brown exhaust gas',type:'empirical',mode:'percent',data:[['N',30.4],['O',69.6]],
+    eco:{type:'note',kicker:'Identifying a pollutant',text:'NO₂ forms in hot car engines when nitrogen and oxygen from the air react. It is toxic, and in rain it forms nitric acid. Catalytic converters turn nitrogen oxides back into N₂. Composition analysis like this is how chemists identify what comes out of an exhaust pipe.',think:'Petrol contains no nitrogen. So why does a car engine make nitrogen oxides?'},
+    q:p=>`A brown gas from a car exhaust contains ${fmt(p.data[0][1])}% nitrogen and ${fmt(p.data[1][1])}% oxygen by mass. Find its empirical formula.`},
+  {id:'6.2',level:6,title:'Cracked hydrocarbon',type:'empirical',mode:'percent',data:[['C',85.7],['H',14.3]],Mr:56,
+    eco:{type:'note',kicker:'Feedstock for plastics',text:'C₄H₈ is an alkene made by cracking long-chain alkanes from crude oil. Alkenes are the starting material for poly(alkene) plastics. The exact formula matters because it fixes how much monomer each tonne of crude oil can supply.',think:'Plastics made from crude oil lock fossil carbon into products. What happens to that carbon if the plastic is burned instead of recycled?'},
+    q:p=>`A hydrocarbon made by cracking contains ${fmt(p.data[0][1])}% carbon and ${fmt(p.data[1][1])}% hydrogen by mass. Its M<sub>r</sub> is ${p.Mr}. Find its empirical and molecular formulae.`},
+  {id:'6.3',level:6,title:'Sulfur oxide',type:'empirical',mode:'mass',data:[['S',3.2],['O',4.8]],
+    eco:{type:'note',kicker:'Acid rain chemistry',text:'Sulfur trioxide forms when sulfur dioxide from burning fossil fuels is oxidised in the air. It reacts with water to make sulfuric acid, the main acid in acid rain. In industry the same reaction is wanted: it is a step in making sulfuric acid by the Contact process.',think:'The same substance is a pollutant in one place and a product in another. What decides which it is?'},
+    q:p=>`An oxide of sulfur collected from flue gas contains ${fmt(p.data[0][1])} g of sulfur combined with ${fmt(p.data[1][1])} g of oxygen. Find its empirical formula.`},
+  {id:'6.4',level:6,title:'Washing soda',type:'hydrate',salt:'Na2CO3',hyd:14.3,anh:5.3,
+    q:p=>`${fmt(p.hyd)} g of washing soda crystals, Na₂CO₃·xH₂O, are heated until all the water is removed. ${fmt(p.anh)} g of anhydrous sodium carbonate remains. Find x.`},
+  {id:'6.5',level:6,title:'Blue crystals',type:'hydrate',salt:'CuSO4',hyd:2.5,anh:1.6,
+    q:p=>`${fmt(p.hyd)} g of blue hydrated copper(II) sulfate, CuSO₄·xH₂O, is heated to constant mass. ${fmt(p.anh)} g of white anhydrous copper(II) sulfate remains. Find x.`},
+  {id:'7.1',level:7,title:'Aluminium smelter',rx:'elAl',givens:[gv.i(100000,1,'h')],target:tg.m('Al','kg'),ext:true,
+    q:p=>`One cell in an aluminium smelter runs at ${fmt(p.givens[0].I)} A for ${fmt(p.givens[0].t)} ${ULBL[p.givens[0].tUnit]}. What mass of aluminium is produced at the cathode, in kg? (F = 96 500 C/mol)`},
+  {id:'7.2',level:7,title:'Green hydrogen',rx:'elH2',givens:[gv.i(10,2,'h')],target:tg.v('H2','dm3'),ext:true,
+    q:p=>`An electrolyser powered by a wind turbine passes ${fmt(p.givens[0].I)} A for ${fmt(p.givens[0].t)} ${ULBL[p.givens[0].tUnit]} through acidified water. What volume of hydrogen forms at the cathode, at r.t.p., in dm³?`},
+  {id:'7.3',level:7,title:'Copper refinery',rx:'elCu',givens:[gv.i(2,30,'min')],target:tg.m('Cu'),ext:true,
+    q:p=>`Copper is refined by electrolysis. A current of ${fmt(p.givens[0].I)} A flows for ${fmt(p.givens[0].t)} ${ULBL[p.givens[0].tUnit]}. What mass of pure copper is deposited on the cathode, in g?`},
+  {id:'7.4',level:7,title:'Fertiliser plant',rx:'nh4no3',givens:[gv.m('NH3',3.4,'t')],target:tg.m('NH4NO3','t'),
+    q:p=>`A fertiliser plant reacts ${Q0(p)} of ammonia with excess nitric acid. What mass of ammonium nitrate is produced, in tonnes?`},
+  {id:'7.5',level:7,title:'Power station scrubber',rx:'fgd',givens:[gv.m('SO2',64,'kg')],target:tg.m('CaCO3','kg'),
+    q:p=>`A coal power station's scrubber must remove ${Q0(p)} of sulfur dioxide every hour. What mass of calcium carbonate is needed per hour, in kg?`},
+  {id:'7.6',level:7,title:'Plating-works wastewater',rx:'cuoh2',givens:[gv.s('CuSO4',0.002,1000,'dm3')],target:tg.m('Cu(OH)2'),
+    q:p=>`An electroplating works produces ${Q0(p)} copper(II) sulfate wastewater. Excess sodium hydroxide is added. What mass of copper(II) hydroxide precipitate forms, in g?`},
+  {id:'7.7',level:7,title:'Silver from photo waste',rx:'agcl',givens:[gv.s('AgNO3',0.05,2,'dm3')],target:tg.m('AgCl'),
+    q:p=>`${Q0(p)} silver nitrate waste is treated with excess sodium chloride. What mass of silver chloride precipitate can be collected, in g?`},
+
+  {id:'1.4',level:1,title:'Chimney sulfur dioxide',sub:'SO2(g)',givens:[gv.m('SO2',3.2,'kg')],target:tg.v('SO2','dm3'),eco:{type:'gasEmission'},
+    q:p=>`A factory chimney releases ${Q0(p)} of sulfur dioxide, SO₂. What volume is this at r.t.p., in dm³?`},
+  {id:'1.5',level:1,title:'Liquid fertiliser',sub:'NH4NO3(aq)',givens:[gv.m('NH4NO3',8)],target:tg.c('NH4NO3',500),
+    eco:{type:'note',kicker:'Dosing nutrients',text:'Liquid fertilisers are sold as concentrated solutions and diluted on the farm. Knowing the concentration in mol/dm³ tells the farmer exactly how much nitrogen each litre carries. Too strong a dose is wasted: the extra nitrate washes into rivers and feeds algal blooms.',think:'If the farmer dilutes this solution ten times, what is the new concentration? Why would that matter for the river next to the field?'},
+    q:p=>`${Q0(p)} of ammonium nitrate, NH₄NO₃, is dissolved in water to make ${fmt(p.target.vol)} ${ULBL[p.target.volUnit]} of liquid fertiliser. Calculate its concentration in mol/dm³.`},
+  {id:'2.6',level:2,title:'Burning natural gas',rx:'methane',givens:[gv.m('CH4',1.6,'kg')],target:tg.m('CO2','kg'),
+    q:p=>`A home boiler burns ${Q0(p)} of methane in a day. What mass of carbon dioxide does it produce, in kg?`},
+  {id:'2.10',level:2,title:'A coal power station',rx:'coal',givens:[gv.m('C',1,'t')],target:tg.m('CO2','t'),
+    q:p=>`A power station burns ${Q0(p)} of coal (treat it as pure carbon). What mass of CO₂ is released, in tonnes?`},
+  {id:'2.11',level:2,title:'A barbecue gas bottle',rx:'propane',givens:[gv.m('C3H8',11,'kg')],target:tg.v('CO2','m3'),
+    q:p=>`A gas bottle holds ${Q0(p)} of propane, C₃H₈. What volume of CO₂ is produced when it is all burned, at r.t.p., in m³?`},
+  {id:'2.7',level:2,title:'Bioethanol in the tank',rx:'ethanolburn',givens:[gv.m('C2H5OH',2.3,'kg')],target:tg.m('CO2','kg'),
+    q:p=>`A car runs on ${Q0(p)} of bio-ethanol, C₂H₅OH. What mass of carbon dioxide comes out of the exhaust, in kg?`},
+  {id:'2.8',level:2,title:'Roasting a copper ore',rx:'cuco3',givens:[gv.m('CuCO3',12.4)],target:tg.m('CuO'),
+    q:p=>`${Q0(p)} of copper(II) carbonate is heated until it fully decomposes. What mass of copper(II) oxide is left, in g?`},
+  {id:'2.9',level:2,title:'A hydrogen car',rx:'hydrogen',givens:[gv.m('H2',4,'kg')],target:tg.m('H2O','kg'),
+    q:p=>`A fuel-cell car uses ${Q0(p)} of hydrogen on a long journey. What mass of water comes out of its exhaust, in kg?`},
+  {id:'3.6',level:3,title:'Contact process gas',rx:'contact',givens:[gv.v('SO2',480,'dm3')],target:tg.m('SO3','kg'),
+    q:p=>`In the Contact process, ${Q0(p)} of sulfur dioxide (at r.t.p.) is fully converted to sulfur trioxide. What mass of SO₃ forms, in kg?`},
+  {id:'3.7',level:3,title:'Testing ammonia solution',rx:'nh42so4',givens:[gv.s('H2SO4',0.05,20)],target:tg.c('NH3',25),
+    q:p=>`${fmt(p.target.vol)} ${ULBL[p.target.volUnit]} of ammonia solution, used to make fertiliser, is neutralised by ${Q0(p)} sulfuric acid. Calculate the concentration of the ammonia.`},
+  {id:'3.8',level:3,title:'Oxygen for a flame',rx:'methane',givens:[gv.m('CH4',10)],target:tg.v('O2','dm3'),
+    q:p=>`A Bunsen burner burns ${Q0(p)} of methane. What volume of oxygen does it take from the air, at r.t.p., in dm³?`},
+  {id:'4.4',level:4,title:'Scrubber running low',rx:'fgd',givens:[gv.m('CaCO3',50,'kg'),gv.m('SO2',40,'kg')],target:tg.m('CO2','kg'),
+    q:p=>`A scrubber holds ${qty(p.givens[0])} of limestone, and ${qty(p.givens[1])} of sulfur dioxide passes through it. What mass of CO₂ is released, in kg?`},
+  {id:'4.5',level:4,title:'Fertiliser in the lab',rx:'nh4no3',givens:[gv.m('NH3',3.4),gv.s('HNO3',2,50)],target:tg.m('NH4NO3'),
+    q:p=>`${qty(p.givens[0])} of ammonia gas is bubbled into ${qty(p.givens[1])} nitric acid. What mass of ammonium nitrate forms, in g?`},
+  {id:'4.6',level:4,title:'Silver from a rinse bath',rx:'agcl',givens:[gv.s('AgNO3',0.1,100),gv.m('NaCl',0.468)],target:tg.m('AgCl'),
+    q:p=>`${qty(p.givens[1])} of sodium chloride is added to ${qty(p.givens[0])} silver nitrate waste. What mass of silver chloride precipitates, in g?`},
+  {id:'5.7',level:5,title:'Lime kiln yield',rx:'limestone',givens:[gv.m('CaCO3',200,'kg')],target:tg.y('CaO',98,'kg'),
+    q:p=>`A kiln heats ${Q0(p)} of calcium carbonate and produces ${fmt(p.target.actual)} ${ULBL[p.target.actualUnit]} of calcium oxide (quicklime). Calculate the percentage yield.`},
+  {id:'5.8',level:5,title:'Low-grade iron ore',rx:'blast',givens:[gv.m('Fe2O3',800,'t')],purity:60,target:tg.m('Fe','t'),
+    q:p=>`A blast furnace is fed ${Q0(p)} of iron ore that contains ${p.purity}% Fe₂O₃ by mass. What mass of iron can be produced, in tonnes?`},
+  {id:'5.9',level:5,title:'Impure magnesium ribbon',rx:'mghcl',givens:[gv.v('H2',456,'cm3')],target:tg.p('Mg',0.5),
+    q:p=>`A ${fmt(p.target.sample)} g piece of old magnesium ribbon reacts with excess acid and gives ${Q0(p)} of hydrogen at r.t.p. Calculate the percentage purity of the magnesium.`},
+  {id:'5.10',level:5,title:'Atom economy of ammonia',type:'ae',rx:'haber',
+    q:()=>`Calculate the atom economy for making ammonia in the Haber process.`},
+  {id:'5.11',level:5,title:'Atom economy of quicklime',type:'ae',rx:'limestone',
+    q:()=>`Calculate the atom economy for making calcium oxide (quicklime) by heating limestone.`},
+  {id:'6.6',level:6,title:'An ozone destroyer',type:'empirical',mode:'percent',data:[['C',9.9],['Cl',58.7],['F',31.4]],
+    eco:{type:'note',kicker:'Identifying a pollutant',text:'CCl₂F₂ is a CFC, once used in fridges and aerosol cans. In the upper atmosphere, ultraviolet light breaks it apart and the chlorine atoms destroy ozone, which shields life from UV. CFCs were banned by the Montreal Protocol in 1987, and the ozone layer is slowly recovering.',think:'CFCs were chosen because they are unreactive and non-toxic. Why did that same stability make them so damaging?'},
+    q:p=>`A gas found in old fridges contains ${p.data.map(r=>`${fmt(r[1])}% ${r[0]}`).join(', ')} by mass. Find its empirical formula.`},
+  {id:'6.7',level:6,title:'A biofuel molecule',type:'empirical',mode:'percent',data:[['C',52.2],['H',13],['O',34.8]],Mr:46,
+    eco:{type:'note',kicker:'Fuel from plants',text:'C₂H₆O is ethanol, a biofuel made by fermenting sugars from crops. Its carbon came from CO₂ absorbed by photosynthesis. Because it already contains oxygen, it releases less energy per gram than petrol.',think:'Using land to grow fuel crops competes with growing food. How would you weigh the two?'},
+    q:p=>`A liquid biofuel contains ${p.data.map(r=>`${fmt(r[1])}% ${r[0]}`).join(', ')} by mass. Its M<sub>r</sub> is ${p.Mr}. Find its empirical and molecular formulae.`},
+  {id:'6.8',level:6,title:'Rust on a bridge',type:'empirical',mode:'percent',data:[['Fe',70],['O',30]],
+    eco:{type:'note',kicker:'Corrosion costs resources',text:'Fe₂O₃ is the main compound in rust. Every tonne of iron that rusts away was mined, reduced in a blast furnace and processed, so corrosion wastes all of that energy and ore. Painting, galvanising and recycling scrap steel all reduce the loss.',think:'Galvanising coats iron with zinc, which corrodes instead. Is using up zinc to save iron a good trade?'},
+    q:p=>`A sample of rust contains ${fmt(p.data[0][1])}% iron and ${fmt(p.data[1][1])}% oxygen by mass. Find its empirical formula.`},
+  {id:'6.9',level:6,title:'Epsom salts',type:'hydrate',salt:'MgSO4',hyd:4.92,anh:2.4,
+    q:p=>`${fmt(p.hyd)} g of Epsom salts, MgSO₄·xH₂O, are heated to constant mass. ${fmt(p.anh)} g of anhydrous magnesium sulfate remains. Find x.`},
+  {id:'7.8',level:7,title:'A tonne of aluminium',rx:'elAl',givens:[gv.m('Al',1,'t')],target:{sp:'e-',kind:'time',I:150000,unit:'h'},ext:true,
+    q:p=>`A smelter cell runs at ${fmt(p.target.I)} A. How long does it take to produce ${Q0(p)} of aluminium, in hours? (F = 96 500 C/mol)`},
+  {id:'7.9',level:7,title:'Ammonium sulfate plant',rx:'nh42so4',givens:[gv.m('H2SO4',9.8,'t')],target:tg.m('(NH4)2SO4','t'),
+    q:p=>`A fertiliser plant reacts ${Q0(p)} of sulfuric acid with excess ammonia. What mass of ammonium sulfate is produced, in tonnes?`},
+  {id:'7.10',level:7,title:'Aluminium from alumina',rx:'alumina',givens:[gv.m('Al2O3',1.02,'t')],target:tg.m('Al','t'),
+    q:p=>`Electrolysis breaks down ${Q0(p)} of purified aluminium oxide. What mass of aluminium is produced, in tonnes?`},
+  {id:'7.11',level:7,title:'Ethanol from ethene',rx:'hydration',givens:[gv.m('C2H4',2.8,'t')],target:tg.m('C2H5OH','t'),
+    q:p=>`A chemical plant hydrates ${Q0(p)} of ethene with steam. What mass of ethanol is produced, in tonnes?`},
+];
+BANK.sort((a,b)=>{ const A=a.id.split('.').map(Number), B=b.id.split('.').map(Number); return A[0]-B[0] || A[1]-B[1]; });
+function cloneProblem(p){ return {...p, givens:p.givens? p.givens.map(g=>({...g})) : undefined, target:p.target? {...p.target}:undefined, data:p.data? p.data.map(r=>[...r]) : undefined, cond:p.cond? {...p.cond}:undefined}; }
+
+if(typeof module!=='undefined') module.exports = {solveProblem, BANK, LEVELS, RX, getRx, cloneProblem, fmt, parseNum, parseFormula, parseEquation, checkBalance};
+
+</script>
+<script>
+/* ================================================================
+   EcoChem UI — student path, teacher board, reaction lab
+   ================================================================ */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {
+  get(k,d){ try{ const v = localStorage.getItem(k); return v? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const PL = Object.fromEntries(PATTERN);
+const reduceMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return true; } };
+
+function judge(c, raw){
+  if(c.type==='choice') return String(raw)===String(c.answer)? {ok:true} : {ok:false, msg:c.wrongMsg||c.tip};
+  if(!String(raw).trim()) return {empty:true};
+  if(c.type==='formula'){
+    let counts;
+    try{ counts = parseFormula(String(raw).trim().replace(/\s/g,'')).counts; }catch(e){ return {ok:false, msg:'Write a formula with element symbols, for example NO2 or C2H4.'}; }
+    if(sameCounts(counts, c.counts)) return {ok:true};
+    const ks = Object.keys(c.counts);
+    if(ks.length===Object.keys(counts).length && ks.every(k=>counts[k])){
+      const r = counts[ks[0]]/c.counts[ks[0]];
+      if(r>1 && Number.isInteger(r) && ks.every(k=>counts[k]===c.counts[k]*r)) return {ok:false, msg:'Right proportions, but not the simplest whole-number ratio. Divide every number by their common factor.'};
+    }
+    return {ok:false, msg:'Not quite. '+(c.tip||'')};
+  }
+  const v = parseNum(raw);
+  if(isNaN(v)) return {ok:false, msg:'Enter a number, for example 0.25, 2.5e-3 or 2.5 × 10^-3.'};
+  if(close(v, c.answer)) return {ok:true};
+  for(const w of (c.wrong||[])) if(isFinite(w.v) && w.v!==0 && close(v, w.v)) return {ok:false, msg:w.m};
+  for(const f of [1000,0.001,1e6,1e-6]) if(close(v, c.answer*f)) return {ok:false, msg:'Check your units. Your answer is out by a factor of '+fmt(f>1?f:1/f)+' (g ↔ kg ↔ t, or cm³ ↔ dm³).'};
+  for(const f of [100,0.01]) if(close(v, c.answer*f)) return {ok:false, msg:'Check the decimal point. Your answer is out by a factor of 100.'};
+  if(close(v, c.answer, 0.06)) return {ok:false, msg:'Very close. Keep more figures in your working and round only at the end.'};
+  return {ok:false, msg:'Not quite. '+(c.tip||'')};
+}
+
+/* ---------------- Player ---------------- */
+class Player{
+  constructor(root, o={}){ this.root = root; this.mode = o.mode||'practice'; this.support = o.support||'guided'; this.onDone = o.onDone; this.onNext = o.onNext; this.uid = Math.random().toString(36).slice(2,7);
+    root.addEventListener('submit', e=>this.onSubmit(e)); root.addEventListener('click', e=>this.onClick(e)); root.addEventListener('input', e=>this.onInput(e)); }
+  load(p){ this.p = p; this.compute(); this.reset(); }
+  compute(){ try{ this.sol = solveProblem(this.p); this.err = null; }catch(e){ this.sol = null; this.err = e.message; } }
+  recompute(){ this.compute(); if(this.sol){ this.idx = Math.min(this.idx, this.sol.steps.length-1); } this.render(); }
+  reset(){ this.idx = 0; this.work = false; this.cs = {}; this.wrong = 0; this.shown = 0; this.finished = false; this.indepDone = false; this._enter = -1;
+    if(this.sol && this.mode==='practice') this.advance(false); this.render(); }
+  setMode(m){ this.mode = m; this.reset(); }
+  setSupport(s){ this.support = s; this.reset(); }
+  get S(){ return this.sol.steps; }
+  stepDone(k){ const s = this.S[k]; if(!s.checks || s.skipped) return true; return s.checks.every((c,j)=>{ const st = this.cs[k+'-'+j]; return st && st.st!=='open'; }); }
+  advance(scroll=true){
+    let k = this.idx; while(k < this.S.length-1 && this.stepDone(k)) k++;
+    this.idx = k; this._scroll = scroll;
+    if(k===this.S.length-1 && !this.finished) this.finish();
+  }
+  finish(){ this.finished = true; this.stars = this.shown>0? 1 : (this.wrong<=1? 3 : 2); if(this.onDone) this.onDone(this.stars); }
+  finalCheck(){ for(let k=this.S.length-1;k>=0;k--){ const s=this.S[k]; if(s.checks){ const j = s.checks.findIndex(c=>c.final); if(j>=0) return {k,j,c:s.checks[j]}; } } return null; }
+
+  /* rendering */
+  render(){
+    const r = this.root; r.innerHTML = '';
+    if(this.err){ r.innerHTML = `<div class="error-card"><b>This calculation can't run yet.</b><p>${esc(this.err)}</p></div>`; return; }
+    const list = document.createElement('div'); list.className = 'steps';
+    if(this.mode==='practice' && this.support==='independent' && !this.indepDone){
+      this.S.forEach((s,k)=>{ if(s.id==='question'||s.id==='equation') list.append(this.stepEl(k, true)); });
+      list.append(this.indepEl());
+    } else {
+      for(let k=0;k<=this.idx;k++) list.append(this.stepEl(k));
+    }
+    r.append(list);
+    r.append(this.controlsEl());
+    if(this._scroll){ this._scroll = false;
+      const cur = list.querySelector('.step.current') || list.lastElementChild;
+      if(cur){ const rect = cur.getBoundingClientRect(); if(rect.bottom > innerHeight || rect.top < 0) cur.scrollIntoView({block:'nearest', behavior: reduceMotion()? 'auto':'smooth'});
+        const inp = cur.querySelector('input'); if(inp && this.mode==='practice') inp.focus({preventScroll:true}); }
+    }
+  }
+  railEl(){
+    const ol = document.createElement('ol'); ol.className = 'rail'; ol.setAttribute('aria-label','Solution pattern');
+    const indep = this.mode==='practice' && this.support==='independent' && !this.indepDone;
+    this.S.forEach((s,k)=>{
+      let cls = s.id==='eco'? 'eco' : '';
+      if(s.skipped) cls += ' skip';
+      else if(indep) cls += (s.id==='question'||s.id==='equation')? ' done' : s.id==='answer'? ' now' : '';
+      else if(this.mode==='reveal'){ if(k<this.idx || (k===this.idx && (this.work || !this.S[k].checks))) cls += ' done'; if(k===this.idx) cls += ' now'; }
+      else { if(k<this.idx || this.finished) cls += ' done'; else if(k===this.idx) cls += ' now'; }
+      const li = document.createElement('li'); li.className = cls.trim(); li.innerHTML = (s.id==='eco'? LEAF : '') + (s.title && s.id!=='eco' ? s.title : PL[s.id]);
+      ol.append(li);
+    });
+    return ol;
+  }
+  stepEl(k, forceWork=false){
+    const s = this.S[k]; const title = s.title || PL[s.id];
+    const isCur = k===this.idx && !(this.mode==='practice' && this.finished) && !forceWork;
+    const el = document.createElement('article');
+    el.className = 'step' + (s.skipped?' skipped':'') + (s.id==='eco'?' eco':'') + (isCur?' current':'') + (k===this._enter?' enter':'');
+    el.innerHTML = `<span class="num">${s.id==='eco'? LEAF : k+1}</span><h3>${title}${s.skipped?' <small>not needed here</small>':''}</h3>`;
+    const body = document.createElement('div'); body.className = 'body';
+    if(s.skipped || !s.checks || forceWork){ body.innerHTML = s.body;
+      if(s.id==='answer' && this.mode==='practice' && this.finished) body.innerHTML += this.shown? `<p class="verdict shown">Answer shown. Compare the working with yours.</p>` : `<p class="verdict ok">✓ Correct! Final answer confirmed.</p>`; }
+    else if(this.mode==='reveal'){
+      if(k<this.idx || this.work) body.innerHTML = s.body;
+      else body.innerHTML = (s.ask? `<p class="ask">Ask the class: ${s.ask}</p>`:'') + `<div class="checks">${s.checks.map(c=>`<div class="check"><p class="ask-q">${c.label} = <span class="blank">?</span> ${c.unit||''}</p>${c.guide?`<p class="guide">${c.guide}</p>`:''}</div>`).join('')}</div>`;
+    } else {
+      if(this.stepDone(k)){ const keys = s.checks.map((c,j)=>this.cs[k+'-'+j]); const anyShown = keys.some(x=>x && x.st==='shown');
+        body.innerHTML = s.body + (anyShown? `<p class="verdict shown">Answer shown. Read the working above, then try the next step yourself.</p>` : `<p class="verdict ok">✓ Correct! ${s.checks.length>1?'All parts of this step are right.':'This step is done.'}</p>`); }
+      else body.innerHTML = (s.ask? `<p class="ask">${s.ask}</p>`:'') + `<div class="checks">${s.checks.map((c,j)=>this.checkHTML(k+'-'+j, c)).join('')}</div>`;
+    }
+    el.append(body);
+    return el;
+  }
+  checkHTML(key, c, showGuide = this.support==='guided'){
+    const st = this.cs[key] || {st:'open', tries:0};
+    if(st.st!=='open'){
+      const val = c.type==='choice'? c.options.find(o=>o.v===c.answer).html : c.type==='formula'? fStr(c.answerText) : fmt(c.answer)+' '+(c.unit||'');
+      return `<div class="check ${st.st==='ok'?'ok':'shown'}"><p class="fb ${st.st==='ok'?'ok':'tip'}">${st.st==='ok'?'✓ Correct! ':'Answer shown: '}${c.label} = ${val}</p></div>`;
+    }
+    const id = `c${this.uid}-${key}`;
+    let h = `<div class="check">`;
+    if(showGuide && c.guide) h += `<p class="guide">${c.guide}</p>`;
+    const helpBtns = `${this.support!=='guided' && c.tip ? `<button class="btn ghost" type="button" data-hint="${key}">Hint</button>`:''}${st.tries>=2? `<button class="btn ghost" type="button" data-show="${key}">Show me</button>`:''}`;
+    if(c.type==='choice'){
+      h += `<div class="crow"><b>${c.label}:</b>${c.options.map(o=>`<button class="choice" type="button" data-choice="${key}" data-v="${o.v}">${o.html}</button>`).join('')}${helpBtns}</div>`;
+    } else {
+      h += `<form class="crow" data-form="${key}"><label for="${id}">${c.label} =</label><input id="${id}" name="a" autocomplete="off" spellcheck="false" inputmode="${c.type==='formula'?'text':'decimal'}" value="${st.val? esc(st.val):''}" placeholder="${c.type==='formula'?'e.g. NO2':'your answer'}"><span class="unit">${c.unit||''}</span><button class="btn primary" type="submit">Check</button>${helpBtns}</form>`;
+    }
+    if(st.msg) h += `<p class="fb ${st.cls||''}" role="status">${st.msg}</p>`;
+    return h + '</div>';
+  }
+  indepEl(){
+    const f = this.finalCheck();
+    const el = document.createElement('article'); el.className = 'step current';
+    el.innerHTML = `<span class="num">?</span><h3>Your final answer <small>work it out on paper first</small></h3><div class="body"><p class="ask">Follow the pattern on paper: data, moles, mole ratio, required quantity.</p><div class="checks">${this.checkHTML('F', f.c, false)}</div></div>`;
+    return el;
+  }
+  controlsEl(){
+    const d = document.createElement('div');
+    if(this.mode==='practice'){
+      if(this.finished){
+        const msg = this.stars===3? 'Clean solve. Try the next problem, or step up a support level.' : this.stars===2? 'Solved, with a few corrections along the way.' : 'Worked through with some steps shown. Try it again without "Show me" for more stars.';
+        d.className = 'done-banner';
+        d.innerHTML = `<p><span class="stars">${'★'.repeat(this.stars)}<span class="off">${'★'.repeat(3-this.stars)}</span></span> &nbsp;${msg}</p><div class="controls" style="margin:0"><button class="btn" data-act="again">Try again</button>${this.onNext? '<button class="btn primary" data-act="next">Next problem →</button>':''}</div>`;
+      } else {
+        d.className = 'controls';
+        d.innerHTML = `<button class="btn ghost" data-act="again">Start again</button>`;
+      }
+      return d;
+    }
+    d.className = 'controls';
+    const last = this.S.length-1;
+    const cur = this.S[this.idx];
+    let label = 'Finished';
+    if(cur.checks && !cur.skipped && !this.work) label = 'Reveal working';
+    else if(this.idx<last) label = 'Next: ' + (this.S[this.idx+1].title || PL[this.S[this.idx+1].id]);
+    const atEnd = this.idx===last && (this.work || !cur.checks);
+    d.innerHTML = `<button class="btn" data-act="prev" ${this.idx===0 && !this.work?'disabled':''}>← Back</button><button class="btn ${this.S[this.idx+1]&&this.S[this.idx+1].id==='eco' && (this.work||!cur.checks)?'eco':'primary'}" data-act="fwd" ${atEnd?'disabled':''}>${label} →</button><span class="spacer"></span><button class="btn ghost" data-act="all">Show all</button><button class="btn ghost" data-act="restart">Restart</button>`;
+    return d;
+  }
+
+  /* interaction */
+  fwd(){ const cur = this.S[this.idx]; if(cur.checks && !cur.skipped && !this.work){ this.work = true; }
+    else if(this.idx < this.S.length-1){ this.idx++; this.work = false; this._enter = this.idx; this._scroll = true; } this.render(); }
+  back(){ if(this.work){ this.work = false; } else if(this.idx>0){ this.idx--; this.work = true; } this._enter = -1; this.render(); }
+  answer(key, raw){
+    let c, k;
+    if(key==='F'){ c = this.finalCheck().c; } else { const [a,b] = key.split('-').map(Number); k = a; c = this.S[a].checks[b]; }
+    const st = this.cs[key] || (this.cs[key] = {st:'open', tries:0});
+    st.val = raw;
+    const res = judge(c, raw);
+    if(res.empty){ st.msg = 'Type an answer first.'; st.cls = 'bad'; this.render(); return; }
+    if(res.ok){ st.st = 'ok'; st.msg = ''; } else { st.tries++; this.wrong++; st.msg = res.msg; st.cls = 'bad'; }
+    if(key==='F'){ if(res.ok) this.completeIndependent(); else this.render(); return; }
+    if(res.ok && this.stepDone(k)){ this._enter = k+1; this.advance(); }
+    this.render();
+  }
+  completeIndependent(){
+    this.indepDone = true;
+    this.S.forEach((s,k)=>(s.checks||[]).forEach((c,j)=>{ this.cs[k+'-'+j] = {st:'ok'}; }));
+    this.idx = this.S.length-1; this._scroll = true; this.finish(); this.render();
+  }
+  onSubmit(e){ const f = e.target.closest('form[data-form]'); if(!f) return; e.preventDefault(); this.answer(f.dataset.form, f.elements.a.value); }
+  onInput(e){
+    if(e.target.matches('input[data-leak]')){ const L = +e.target.value; const box = e.target.closest('.fuels'); const max = +e.target.dataset.max;
+      const v = leakAdjusted(FUELS.map(fuelStats).find(f=>f.id==='methane'), L); const row = $('[data-fuel="methane"]', box);
+      $('[data-leak-out]', box).textContent = L; row.querySelector('i').style.setProperty('--w', (v/max*100)+'%'); row.querySelector('[data-val]').textContent = fmt(v)+' MJ'; return; }
+    if(e.target.matches('input[data-ore]')){ const g = +e.target.value; const comp = +e.target.dataset.comp, met = +e.target.dataset.metal; const ore = comp/(g/100);
+      const card = e.target.closest('.body'); $('[data-grade-out]',card).textContent = g; $('[data-ore-out]',card).textContent = fm(ore); $('[data-waste-out]',card).textContent = fm(ore-met); }
+  }
+  onClick(e){
+    const b = e.target.closest('button'); if(!b || !this.root.contains(b)) return;
+    if(b.dataset.choice){ this.answer(b.dataset.choice, b.dataset.v); return; }
+    if(b.dataset.hint){ const key = b.dataset.hint; const st = this.cs[key] || (this.cs[key] = {st:'open', tries:0});
+      const c = key==='F'? this.finalCheck().c : this.S[+key.split('-')[0]].checks[+key.split('-')[1]];
+      st.hints = (st.hints||0)+1; st.msg = st.hints>1 && c.guide? `${c.tip}<br>Set up: ${c.guide}` : c.tip; st.cls = 'tip';
+      const inp = b.closest('form') && b.closest('form').elements.a; if(inp) st.val = inp.value; this.render(); return; }
+    if(b.dataset.show){ const key = b.dataset.show; const st = this.cs[key] || (this.cs[key] = {}); st.st = 'shown'; this.shown++;
+      if(key==='F'){ this.completeIndependent(); return; }
+      const k = +key.split('-')[0]; if(this.stepDone(k)){ this._enter = k+1; this.advance(); } this.render(); return; }
+    const act = b.dataset.act;
+    if(act==='again'||act==='restart') this.reset();
+    else if(act==='next' && this.onNext) this.onNext();
+    else if(act==='fwd') this.fwd();
+    else if(act==='prev') this.back();
+    else if(act==='all'){ this.idx = this.S.length-1; this.work = true; this.render(); }
+  }
+}
+
+/* ---------------- Learning path ---------------- */
+let progress = store.get('ecochem.progress', {});
+const PATH = { cur:null, support: store.get('ecochem.support','guided') };
+const pathPlayer = new Player($('#pathPlayer'), {mode:'practice', support:PATH.support,
+  onDone:(stars)=>{ const id = PATH.cur; if(!progress[id] || stars>progress[id]){ progress[id] = stars; store.set('ecochem.progress', progress); } renderLadder(); },
+  onNext:()=>{ const i = BANK.findIndex(p=>p.id===PATH.cur); loadPath(BANK[(i+1)%BANK.length].id); scrollTo({top:0, behavior:reduceMotion()?'auto':'smooth'}); }});
+const starStr = n=>`<span class="stars" aria-label="${n} of 3 stars">${'★'.repeat(n)}<span class="off">${'★'.repeat(3-n)}</span></span>`;
+const plain = s=>s.replace(/<[^>]+>/g,'');
+function renderLadder(){
+  const curLevel = (BANK.find(p=>p.id===PATH.cur)||{}).level;
+  $('#ladder').innerHTML = LEVELS.map(L=>{ const ps = BANK.filter(p=>p.level===L.n); const done = ps.filter(p=>progress[p.id]).length;
+    return `<details class="level"${L.n===curLevel?' open':''}><summary><span class="ln">L${L.n}</span><span class="lname">${L.name}</span><span class="lcount">${done}/${ps.length}</span></summary>${
+    BANK.filter(p=>p.level===L.n).map(p=>`<button class="prob" data-id="${p.id}" aria-current="${p.id===PATH.cur}"><span class="pid">${p.id}</span><span class="pt">${p.title}${p.ext?' <span class="pill ext">Ext</span>':''}</span>${progress[p.id]? starStr(progress[p.id]):''}</button>`).join('')}</details>`; }).join('');
+}
+function loadPath(id){
+  PATH.cur = id; const p = BANK.find(x=>x.id===id); const L = LEVELS[p.level-1];
+  $('#pathMeta').innerHTML = `Level ${L.n} · ${L.name} · Problem ${p.id}`;
+  $('#pathTitle').textContent = p.title;
+  pathPlayer.load(cloneProblem(p)); renderLadder();
+  store.set('ecochem.cur', id);
+}
+$('#ladder').addEventListener('click', e=>{ const b = e.target.closest('.prob'); if(!b) return; loadPath(b.dataset.id); if(innerWidth<=900) $('#pathTitle').scrollIntoView({behavior:reduceMotion()?'auto':'smooth'}); });
+const SUPPORT_HELP = {guided:'Each step shows you how to set it up.', supported:'Hints appear only when you ask.', independent:'Work on paper, then enter the final answer.'};
+function setSupport(s){ PATH.support = s; $('#supportHelp').textContent = SUPPORT_HELP[s]; store.set('ecochem.support', s); $$('#supportSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.s===s))); pathPlayer.setSupport(s); }
+$('#supportSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(b) setSupport(b.dataset.s); });
+$$('#supportSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.s===PATH.support))); $('#supportHelp').textContent = SUPPORT_HELP[PATH.support];
+
+/* ---------------- Reaction lab ---------------- */
+const LAB = { type:'reacting', rx:'octane', custom:'C3H8 + 5O2 -> 3CO2 + 4H2O', ecoDesired:'',
+  ga:{sp:'C8H18',kind:'mass',value:1,unit:'kg',conc:0.1,vol:25,volUnit:'cm3',I:2,t:30,tUnit:'min'},
+  gb:{sp:'H2',kind:'mass',value:8,unit:'kg',conc:0.1,vol:25,volUnit:'cm3'},
+  tg:{sp:'CO2',kind:'mass',unit:'kg',conc:0.1,vol:25,volUnit:'cm3',I:2},
+  purity:'', yield:'', cond:{type:'rtp',T:298,p:101}, actual:{value:2.55,unit:'kg'}, sample:{value:2,unit:'g'}, desired:'',
+  emp:{mode:'percent', rows:[['C',85.7],['H',14.3],['',''],['','']], Mr:'56'}, hyd:{salt:'CuSO4', hyd:2.5, anh:1.6}, mode:'reveal' };
+const LAB_TYPES = [['reacting','Reacting quantities'],['limiting','Limiting reactant'],['yield','Percentage yield'],['purity','Percentage purity'],['ae','Atom economy'],['empirical','Empirical and molecular formula'],['hydrate','Water of crystallisation']];
+const labPlayer = new Player($('#labPlayer'), {mode:'reveal', support:'guided'});
+let labRxCache = null;
+function labRx(){ if(LAB.rx!=='custom') return getRx(LAB.rx); try{ const r = buildReaction({name:'Your reaction', eq:LAB.custom}, 'custom'); labRxCache = r; return r; }catch(e){ return null; } }
+const opt = (v,l,sel)=>`<option value="${esc(v)}"${String(v)===String(sel)?' selected':''}>${l}</option>`;
+const sel = (id,arr,val,label)=>`<div class="field"><label for="${id}">${label}</label><select id="${id}" name="${id}">${arr.map(([v,l])=>opt(v,l,val)).join('')}</select></div>`;
+const inp = (id,val,label,mode='decimal')=>`<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${id}" inputmode="${mode}" autocomplete="off" value="${esc(val)}"></div>`;
+const spName = s=> s.e? 'e⁻ (electrons)' : plain(fH(s)) + (s.side==='r'? ' · reactant':' · product');
+function amountFields(pre, g, rx){
+  const s = rx.species[findSp(rx,g.sp)];
+  const kinds = s && s.e? [['charge','Current × time']] : [['mass','Mass'],['volume','Gas volume'],['solution','Solution'],['moles','Moles']];
+  if(!kinds.some(k=>k[0]===g.kind)) g.kind = kinds[0][0];
+  if(g.kind==='mass' && !['g','kg','t'].includes(g.unit)) g.unit = 'g';
+  if(g.kind==='volume' && !['cm3','dm3','m3'].includes(g.unit)) g.unit = 'dm3';
+  let h = sel(pre+'_kind', kinds, g.kind, 'Given as');
+  if(g.kind==='mass') h += `<div class="frow">${inp(pre+'_value',g.value,'Mass')}${sel(pre+'_unit',[['g','g'],['kg','kg'],['t','t']],g.unit,'Unit')}</div>`;
+  if(g.kind==='volume') h += `<div class="frow">${inp(pre+'_value',g.value,'Volume')}${sel(pre+'_unit',[['cm3','cm³'],['dm3','dm³'],['m3','m³']],g.unit,'Unit')}</div>`;
+  if(g.kind==='solution') h += `<div class="frow">${inp(pre+'_conc',g.conc,'Conc. (mol/dm³)')}${inp(pre+'_vol',g.vol,'Volume')}${sel(pre+'_volUnit',[['cm3','cm³'],['dm3','dm³']],g.volUnit,'Unit')}</div>`;
+  if(g.kind==='moles') h += `<div class="frow">${inp(pre+'_value',g.value,'Moles')}</div>`;
+  if(g.kind==='charge') h += `<div class="frow">${inp(pre+'_I',g.I,'Current (A)')}${inp(pre+'_t',g.t,'Time')}${sel(pre+'_tUnit',[['s','s'],['min','min'],['h','h']],g.tUnit,'Unit')}</div>`;
+  return h;
+}
+function targetFields(t, rx){
+  const s = rx.species[findSp(rx,t.sp)];
+  const kinds = s && s.e? [['charge','Charge (C)'],['time','Time']] : [['mass','Mass'],['moles','Moles'],['volume','Gas volume'],['solutionVolume','Volume of a solution'],['concentration','Concentration'],['particles','Number of particles']];
+  if(!kinds.some(k=>k[0]===t.kind)) t.kind = kinds[0][0];
+  let h = sel('tg_kind', kinds, t.kind, 'Find the');
+  if(t.kind==='mass'){ if(!['g','kg','t'].includes(t.unit)) t.unit='g'; h += sel('tg_unit',[['g','g'],['kg','kg'],['t','t']],t.unit,'In'); }
+  if(t.kind==='volume'){ if(!['cm3','dm3','m3'].includes(t.unit)) t.unit='dm3'; h += sel('tg_unit',[['cm3','cm³'],['dm3','dm³'],['m3','m³']],t.unit,'In'); }
+  if(t.kind==='solutionVolume'){ if(!['cm3','dm3'].includes(t.unit)) t.unit='cm3'; h += `<div class="frow">${inp('tg_conc',t.conc,'Its conc. (mol/dm³)')}${sel('tg_unit',[['cm3','cm³'],['dm3','dm³']],t.unit,'In')}</div>`; }
+  if(t.kind==='concentration') h += `<div class="frow">${inp('tg_vol',t.vol,'Volume of it')}${sel('tg_volUnit',[['cm3','cm³'],['dm3','dm³']],t.volUnit,'Unit')}</div>`;
+  if(t.kind==='time'){ if(!['s','min','h'].includes(t.unit)) t.unit='s'; h += `<div class="frow">${inp('tg_I',t.I,'Current (A)')}${sel('tg_unit',[['s','s'],['min','min'],['h','h']],t.unit,'In')}</div>`; }
+  return h;
+}
+function ensureSpecies(rx){
+  const keys = rx.species.map(s=>s.key); const reacts = rx.species.filter(s=>s.side==='r').map(s=>s.key); const prods = rx.species.filter(s=>s.side==='p').map(s=>s.key);
+  if(LAB.type==='limiting'){ if(!reacts.includes(LAB.ga.sp)) LAB.ga.sp = reacts[0]; if(!reacts.includes(LAB.gb.sp) || LAB.gb.sp===LAB.ga.sp) LAB.gb.sp = reacts.find(k=>k!==LAB.ga.sp) || reacts[0]; }
+  else if(!keys.includes(LAB.ga.sp)) LAB.ga.sp = reacts[0];
+  if(!keys.includes(LAB.tg.sp)) LAB.tg.sp = prods[0];
+  if(LAB.type==='yield' && !prods.includes(LAB.tg.sp)) LAB.tg.sp = prods[0];
+  if(LAB.type==='purity' && !reacts.includes(LAB.tg.sp)) LAB.tg.sp = reacts[0];
+  if(LAB.type==='purity' && LAB.ga.sp===LAB.tg.sp) LAB.ga.sp = prods.find(k=>k!==LAB.tg.sp) || prods[0];
+  if(LAB._lastRx!==LAB.rx){ LAB._lastRx = LAB.rx; LAB.desired = rx.desired && prods.includes(rx.desired)? rx.desired : prods[0]; }
+  if(!prods.includes(LAB.desired)) LAB.desired = rx.desired && prods.includes(rx.desired)? rx.desired : prods[0];
+}
+function renderLabForm(){
+  const f = $('#labForm'); const T = LAB.type;
+  let h = `<div class="fgroup">${sel('type', LAB_TYPES, T, 'Type of calculation')}</div>`;
+  if(T==='empirical'){
+    h += `<div class="fgroup">${sel('emp_mode',[['percent','Percentage by mass'],['mass','Mass in grams']],LAB.emp.mode,'Data given as')}
+      ${LAB.emp.rows.map((r,i)=>`<div class="frow">${inp('emp_el'+i,r[0],'Element','text')}${inp('emp_v'+i,r[1],LAB.emp.mode==='percent'?'%':'g')}</div>`).join('')}
+      ${inp('emp_Mr',LAB.emp.Mr,'M<sub>r</sub> of compound (optional)')}</div>`;
+  } else if(T==='hydrate'){
+    h += `<div class="fgroup">${inp('hyd_salt',LAB.hyd.salt,'Anhydrous salt formula','text')}<div class="frow">${inp('hyd_hyd',LAB.hyd.hyd,'Hydrated mass (g)')}${inp('hyd_anh',LAB.hyd.anh,'Mass after heating (g)')}</div></div>`;
+  } else {
+    const groups = {}; Object.entries(RX).forEach(([id,r])=>{ (groups[r.cat] = groups[r.cat]||[]).push([id,r.name]); });
+    h += `<div class="fgroup"><div class="field"><label for="rx">Reaction</label><select id="rx" name="rx">${Object.entries(groups).map(([c,arr])=>`<optgroup label="${c}">${arr.map(([v,l])=>opt(v,l,LAB.rx)).join('')}</optgroup>`).join('')}<optgroup label="Your own">${opt('custom','Type an equation…',LAB.rx)}</optgroup></select></div>`;
+    if(LAB.rx==='custom') h += `<div class="field"><label for="custom">Balanced equation</label><textarea id="custom" name="custom" rows="2" spellcheck="false">${esc(LAB.custom)}</textarea></div><p class="hint-line">Use -> for the arrow, (s) (l) (g) (aq) for states, ^2+ for ion charges and e- for electrons. Example: Zn + 2HCl -> ZnCl2 + H2</p><button class="btn" type="button" data-act="applyeq">Use this equation</button>`;
+    const rx = labRx();
+    if(!rx){ h += `<p class="err">${LAB.rx==='custom'? 'That equation could not be read. Check the formulae and the arrow.':''}</p></div>`; }
+    else {
+      ensureSpecies(rx);
+      h += `<div class="eq" style="font-size:1rem">${eqHTML(rx)}</div></div>`;
+      const all = rx.species.map(s=>[s.key, spName(s)]); const reacts = rx.species.filter(s=>s.side==='r').map(s=>[s.key, spName(s)]); const prods = rx.species.filter(s=>s.side==='p').map(s=>[s.key, spName(s)]);
+      if(T==='ae'){
+        h += `<div class="fgroup">${sel('desired', prods, LAB.desired, 'Desired product')}</div>`;
+      } else {
+        h += `<div class="fgroup"><p class="eyebrow">You know</p>${sel('ga_sp', T==='limiting'? reacts : all, LAB.ga.sp, T==='limiting'?'First reactant':'Substance')}${amountFields('ga', LAB.ga, rx)}`;
+        if(T==='limiting') h += `<hr style="border:0;border-top:1px dashed var(--line);width:100%;margin:4px 0">${sel('gb_sp', reacts, LAB.gb.sp, 'Second reactant')}${amountFields('gb', LAB.gb, rx)}`;
+        h += `</div><div class="fgroup"><p class="eyebrow">You want</p>`;
+        if(T==='yield') h += `${sel('tg_sp', prods, LAB.tg.sp, 'Product')}<div class="frow">${inp('act_value',LAB.actual.value,'Actual mass collected')}${sel('act_unit',[['g','g'],['kg','kg'],['t','t']],LAB.actual.unit,'Unit')}</div>`;
+        else if(T==='purity') h += `${sel('tg_sp', reacts, LAB.tg.sp, 'Impure reactant')}<div class="frow">${inp('smp_value',LAB.sample.value,'Mass of impure sample')}${sel('smp_unit',[['g','g'],['kg','kg'],['t','t']],LAB.sample.unit,'Unit')}</div>`;
+        else h += `${sel('tg_sp', all, LAB.tg.sp, 'Substance')}${targetFields(LAB.tg, rx)}`;
+        const used = LAB.purity!==''||LAB.yield!==''||LAB.cond.type!=='rtp';
+        h += `</div><details class="fgroup more"${used?' open':''}><summary>More options</summary><div class="frow">`;
+        if(T==='reacting') h += inp('purity', LAB.purity, 'Purity % (optional)');
+        if(T==='reacting'||T==='limiting') h += inp('yield', LAB.yield, 'Yield % (optional)');
+        h += `</div>${sel('cond',[['rtp','r.t.p. (24 dm³/mol)'],['stp','s.t.p. (22.4 dm³/mol)'],['custom','Other T and p (pV = nRT)']],LAB.cond.type,'Gas conditions')}`;
+        if(LAB.cond.type==='custom') h += `<div class="frow">${inp('condT',LAB.cond.T,'T (K)')}${inp('condP',LAB.cond.p,'p (kPa)')}</div>`;
+        h += `</details>`;
+      }
+    }
+  }
+  h += `<p class="err" id="labErr" role="alert"></p><button class="btn primary" type="submit">Solve step by step</button>`;
+  f.innerHTML = h;
+}
+function readLabForm(){
+  const f = $('#labForm'); const v = id=>{ const el = f.elements[id]; return el? el.value : undefined; };
+  const num = (id, fb)=>{ const x = v(id); if(x===undefined) return fb; const n = parseNum(x); return isNaN(n)? x : n; };
+  if(v('type')) LAB.type = v('type');
+  if(v('rx')) LAB.rx = v('rx');
+  if(v('custom')!==undefined) LAB.custom = v('custom');
+  if(v('desired')) LAB.desired = v('desired');
+  ['ga','gb'].forEach(pre=>{ const g = LAB[pre]; if(v(pre+'_sp')) g.sp = v(pre+'_sp'); if(v(pre+'_kind')) g.kind = v(pre+'_kind');
+    ['value','conc','vol','I','t'].forEach(k=>{ if(v(pre+'_'+k)!==undefined) g[k] = num(pre+'_'+k); });
+    ['unit','volUnit','tUnit'].forEach(k=>{ if(v(pre+'_'+k)) g[k] = v(pre+'_'+k); }); });
+  const t = LAB.tg; if(v('tg_sp')) t.sp = v('tg_sp'); if(v('tg_kind')) t.kind = v('tg_kind');
+  ['conc','vol','I'].forEach(k=>{ if(v('tg_'+k)!==undefined) t[k] = num('tg_'+k); }); ['unit','volUnit'].forEach(k=>{ if(v('tg_'+k)) t[k] = v('tg_'+k); });
+  if(v('act_value')!==undefined){ LAB.actual.value = num('act_value'); LAB.actual.unit = v('act_unit'); }
+  if(v('smp_value')!==undefined){ LAB.sample.value = num('smp_value'); LAB.sample.unit = v('smp_unit'); }
+  if(v('purity')!==undefined) LAB.purity = v('purity'); if(v('yield')!==undefined) LAB.yield = v('yield');
+  if(v('cond')) LAB.cond.type = v('cond'); if(v('condT')!==undefined) LAB.cond.T = num('condT'); if(v('condP')!==undefined) LAB.cond.p = num('condP');
+  if(v('emp_mode')) LAB.emp.mode = v('emp_mode');
+  LAB.emp.rows.forEach((r,i)=>{ if(v('emp_el'+i)!==undefined){ r[0] = v('emp_el'+i).trim(); r[1] = num('emp_v'+i); } });
+  if(v('emp_Mr')!==undefined) LAB.emp.Mr = v('emp_Mr');
+  if(v('hyd_salt')!==undefined){ LAB.hyd.salt = v('hyd_salt').trim(); LAB.hyd.hyd = num('hyd_hyd'); LAB.hyd.anh = num('hyd_anh'); }
+}
+function labSpec(){
+  const T = LAB.type;
+  const pct = (x,name)=>{ if(x===''||x===undefined||x===null) return null; const n = parseNum(x); if(!(n>0 && n<=100)) throw new Error(name+' must be a number between 0 and 100.'); return n; };
+  if(T==='empirical'){
+    const rows = LAB.emp.rows.filter(r=>r[0]); rows.forEach(r=>{ if(!(r[1]>0)) throw new Error(`Enter a positive amount for ${r[0]}.`); });
+    const Mr = LAB.emp.Mr===''? null : parseNum(LAB.emp.Mr); if(Mr!==null && !(Mr>0)) throw new Error('M<sub>r</sub> must be a positive number.');
+    const u = LAB.emp.mode==='percent'? '%' : ' g';
+    return {type:'empirical', mode:LAB.emp.mode, data:rows.map(r=>[r[0],r[1]]), Mr,
+      eco:{type:'note', kicker:'Why this formula matters', text:'Composition analysis is how chemists identify unknown substances, from the gases in a car exhaust to contaminants in drinking water. Once the formula is known, every other stoichiometry calculation about that substance becomes possible.', think:'Where might you meet this compound in the environment, and is it useful or a pollutant there?'},
+      qText:`A compound contains ${rows.map(r=>`${fmt(r[1])}${u} ${r[0]}`).join(', ')} by mass. Find its empirical formula${Mr? `. Its M<sub>r</sub> is ${fmt(Mr)}, so also find its molecular formula`:''}.`};
+  }
+  if(T==='hydrate'){ const s = LAB.hyd.salt; return {type:'hydrate', salt:s, hyd:LAB.hyd.hyd, anh:LAB.hyd.anh, qText:`${fmt(+LAB.hyd.hyd)} g of hydrated ${fStr(s)}·xH₂O is heated until all the water of crystallisation has gone. ${fmt(+LAB.hyd.anh)} g of anhydrous ${fStr(s)} remains. Find x.`}; }
+  const base = LAB.rx==='custom'? {customEq:LAB.custom} : {rx:LAB.rx};
+  if(T==='ae') return {...base, type:'ae', desired:LAB.desired};
+  const strip = g=>{ const o = {sp:g.sp, kind:g.kind}; if(['mass','volume','moles'].includes(g.kind)){ o.value=g.value; o.unit=g.unit||'g'; if(g.kind==='moles') delete o.unit; }
+    if(g.kind==='solution'){ o.conc=g.conc; o.vol=g.vol; o.volUnit=g.volUnit; } if(g.kind==='charge'){ o.I=g.I; o.t=g.t; o.tUnit=g.tUnit; } return o; };
+  const givens = [strip(LAB.ga)]; if(T==='limiting') givens.push(strip(LAB.gb));
+  givens.forEach(g=>['value','conc','vol','I','t'].forEach(k=>{ if(k in g && typeof g[k]!=='number') throw new Error('One of the amounts is not a number. Use digits, for example 2.5 or 2.5e-3.'); }));
+  let target;
+  if(T==='yield'){ if(!(LAB.actual.value>0)) throw new Error('Enter the actual mass collected.'); target = {sp:LAB.tg.sp, kind:'percentYield', actual:LAB.actual.value, actualUnit:LAB.actual.unit}; }
+  else if(T==='purity'){ if(!(LAB.sample.value>0)) throw new Error('Enter the mass of the impure sample.'); target = {sp:LAB.tg.sp, kind:'purity', sample:LAB.sample.value, sampleUnit:LAB.sample.unit}; }
+  else { const t = LAB.tg; target = {sp:t.sp, kind:t.kind, unit:t.unit};
+    if(t.kind==='solutionVolume'){ if(!(t.conc>0)) throw new Error('Enter the concentration of the solution you are finding the volume of.'); target.conc = t.conc; }
+    if(t.kind==='concentration'){ if(!(t.vol>0)) throw new Error('Enter the volume of the solution whose concentration you want.'); target.vol = t.vol; target.volUnit = t.volUnit; delete target.unit; }
+    if(t.kind==='time'){ if(!(t.I>0)) throw new Error('Enter the current.'); target.I = t.I; }
+    if(t.kind==='moles') target.unit = 'mol'; }
+  const spec = {...base, givens, target, cond:{...LAB.cond}};
+  if(LAB.cond.type==='custom' && !(LAB.cond.T>0 && LAB.cond.p>0)) throw new Error('Enter a positive temperature in K and pressure in kPa.');
+  if(T==='reacting'){ const p = pct(LAB.purity,'Purity'); if(p) spec.purity = p; }
+  if(T==='reacting'||T==='limiting'){ const y = pct(LAB.yield,'Yield'); if(y) spec.yield = y; }
+  return spec;
+}
+function solveLab(){
+  try{
+    const spec = labSpec();
+    const rx = (LAB.type==='empirical'||LAB.type==='hydrate')? null : labRx();
+    $('#labTitle').textContent = rx? rx.name : LAB_TYPES.find(t=>t[0]===LAB.type)[1];
+    $('#labMeta').textContent = 'Reaction Lab · ' + LAB_TYPES.find(t=>t[0]===LAB.type)[1];
+    labPlayer.load(spec);
+    if(labPlayer.sol && labPlayer.mode==='reveal'){ labPlayer.idx = labPlayer.S.length-1; labPlayer.work = true; labPlayer.render(); }
+    if(labPlayer.err) $('#labErr').innerHTML = esc(labPlayer.err);
+  }catch(e){ $('#labErr').innerHTML = e.message; }
+}
+$('#labForm').addEventListener('change', e=>{ if(e.target.tagName==='SELECT'){ readLabForm(); renderLabForm(); } });
+$('#labForm').addEventListener('click', e=>{ const b = e.target.closest('[data-act="applyeq"]'); if(b){ readLabForm(); renderLabForm(); } });
+$('#labForm').addEventListener('submit', e=>{ e.preventDefault(); readLabForm(); renderLabForm(); solveLab(); });
+$('#labModeSeg').addEventListener('click', e=>{ const b = e.target.closest('button'); if(!b) return; LAB.mode = b.dataset.m; $$('#labModeSeg button').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); labPlayer.setMode(LAB.mode); });
+
+/* ---------------- routing ---------------- */
+const VIEWS = ['path','lab'];
+function show(view){
+  if(!VIEWS.includes(view)) view = 'path';
+  VIEWS.forEach(v=>{ $('#view-'+v).hidden = v!==view; $('#tab-'+v).setAttribute('aria-selected', String(v===view)); });
+}
+$$('.tab').forEach(t=>t.addEventListener('click', ()=>{ const v = t.dataset.view; try{ history.replaceState(null,'','#'+v); }catch(e){} show(v); }));
+addEventListener('hashchange', ()=>show(location.hash.slice(1)));
+
+/* ---------------- boot ---------------- */
+(function boot(){
+  const saved = store.get('ecochem.cur', null);
+  const first = (saved && BANK.some(p=>p.id===saved))? saved : (BANK.find(p=>!progress[p.id])||BANK[0]).id;
+  loadPath(first);
+  renderLabForm(); solveLab();
+  show(location.hash.slice(1) || 'path');
+})();
+
+</script>
